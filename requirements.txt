@@ -13,3 +13,5 @@ python-docx>=1.2.0
 # Install GTK first: https://github.com/tschoonj/GTK-for-Windows-Runtime-Environment-Installer/releases
 weasyprint>=62.3
 
+itsdangerous>=2.2.0
+

@@ -15,11 +15,15 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, UploadFile, File
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request, Form
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 import os
+import collections
+import time
+import threading
 from pydantic import BaseModel
 
 load_dotenv()
@@ -36,14 +40,86 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="ResumeTailor", version="1.0.0")
 
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=os.getenv("SESSION_SECRET", "change-this-in-production"),
-)
-
 BASE_DIR = Path(__file__).parent
 OUTPUT_DIR = BASE_DIR / "output"
 STATIC_DIR = BASE_DIR / "static"
+
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+# Load and validate environment variables
+SESSION_SECRET = os.environ.get("SESSION_SECRET")
+SITE_PASSWORDS_RAW = os.environ.get("SITE_PASSWORDS")
+
+if not SESSION_SECRET or not SITE_PASSWORDS_RAW:
+    if os.environ.get("RENDER"):
+        raise ValueError("Production configuration error: SESSION_SECRET and SITE_PASSWORDS must be set in environment variables.")
+    else:
+        # Development fallback
+        if not SESSION_SECRET:
+            SESSION_SECRET = "dev-session-secret-key-change-in-production"
+            logger.warning("SESSION_SECRET is not set. Using fallback key for development.")
+        if not SITE_PASSWORDS_RAW:
+            SITE_PASSWORDS_RAW = "admin"
+            logger.warning("SITE_PASSWORDS is not set. Using default password 'admin' for development.")
+
+# ---------------------------------------------------------------------------
+# Rate Limiting for Login
+# ---------------------------------------------------------------------------
+login_failures = collections.defaultdict(list)
+login_failures_lock = threading.Lock()
+
+def check_login_rate_limit(ip: str) -> bool:
+    """Returns True if rate limit is NOT exceeded (i.e. okay to proceed)."""
+    now = time.time()
+    ten_minutes_ago = now - 600
+    with login_failures_lock:
+        login_failures[ip] = [t for t in login_failures[ip] if t > ten_minutes_ago]
+        if len(login_failures[ip]) >= 5:
+            return False
+    return True
+
+def record_login_failure(ip: str):
+    with login_failures_lock:
+        login_failures[ip].append(time.time())
+
+def reset_login_failures(ip: str):
+    with login_failures_lock:
+        if ip in login_failures:
+            del login_failures[ip]
+
+def verify_password(entered_password: str) -> bool:
+    if not SITE_PASSWORDS_RAW:
+        return False
+    allowed_passwords = [p.strip() for p in SITE_PASSWORDS_RAW.split(",") if p.strip()]
+    return entered_password.strip() in allowed_passwords
+
+# ---------------------------------------------------------------------------
+# Route Guard Middleware
+# ---------------------------------------------------------------------------
+@app.middleware("http")
+async def auth_middleware(request: Request, call_next):
+    path = request.url.path
+    
+    # 1. Allowed paths that bypass authentication
+    is_login_route = (path == "/login")
+    is_static_asset = (path.startswith("/static/") and not path.endswith("index.html"))
+    is_favicon = (path == "/favicon.ico")
+    
+    if is_login_route or is_static_asset or is_favicon:
+        return await call_next(request)
+        
+    # 2. Check session authentication status
+    is_authenticated = request.session.get("authenticated", False)
+    if is_authenticated:
+        return await call_next(request)
+        
+    # 3. Handle unauthenticated requests
+    if path.startswith("/api/"):
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+    else:
+        return RedirectResponse(url="/login")
+
+app.add_middleware(SessionMiddleware, secret_key=SESSION_SECRET)
 
 # Mount static files (JS, CSS, etc.)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -226,8 +302,47 @@ def run_fabrication_check(
 # ---------------------------------------------------------------------------
 
 
+@app.get("/login", response_class=HTMLResponse)
+async def get_login(request: Request):
+    if request.session.get("authenticated", False):
+        return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse(request, "login.html", {"error": None})
+
+
+@app.post("/login", response_class=HTMLResponse)
+async def post_login(request: Request, password: str = Form(...)):
+    ip = request.client.host if request.client else "127.0.0.1"
+    
+    if not check_login_rate_limit(ip):
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            {"error": "Too many failed login attempts. Please try again in 10 minutes."},
+            status_code=429
+        )
+        
+    if verify_password(password):
+        reset_login_failures(ip)
+        request.session["authenticated"] = True
+        return RedirectResponse(url="/", status_code=303)
+    else:
+        record_login_failure(ip)
+        return templates.TemplateResponse(
+            request,
+            "login.html",
+            {"error": "Incorrect password. Please try again."},
+            status_code=401
+        )
+
+
+@app.get("/logout")
+async def get_logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/login", status_code=303)
+
+
 @app.get("/", response_class=HTMLResponse)
-async def serve_frontend():
+async def serve_frontend(request: Request):
     """Serve the main single-page application."""
     index_path = STATIC_DIR / "index.html"
     return HTMLResponse(content=index_path.read_text(encoding="utf-8"))
