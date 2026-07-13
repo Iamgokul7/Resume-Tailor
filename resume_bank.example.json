@@ -1,0 +1,215 @@
+{
+  "contact": {
+    "name": "Your Name",
+    "location": "Chennai, Tamil Nadu, India",
+    "email": "your.email@example.com",
+    "phone": "+91 00000 00000",
+    "github": "https://github.com/yourusername",
+    "portfolio": "https://yourportfolio.com",
+    "linkedin": "https://linkedin.com/in/yourusername"
+  },
+  "education": [
+    {
+      "institution": "Anand Institute of Higher Technology",
+      "degree": "Bachelor of Engineering, Computer Science and Engineering",
+      "dates": "Nov 2021 – May 2025",
+      "gpa": "7.84 / 10.00",
+      "relevant_coursework": "Data Structures, Algorithms, Database Management Systems, Software Engineering, Object Oriented Programming"
+    },
+    {
+      "institution": "A.V.Rm.V Matric Higher Secondary School",
+      "degree": "Higher Secondary Certificate (XII)",
+      "dates": "Jun 2020 – May 2021",
+      "gpa": "81.93%",
+      "relevant_coursework": ""
+    },
+    {
+      "institution": "A.V.Rm.V Matric Higher Secondary School",
+      "degree": "Secondary School Certificate (X)",
+      "dates": "Jun 2018 – May 2019",
+      "gpa": "71.6%",
+      "relevant_coursework": ""
+    }
+  ],
+  "certifications": [
+    {
+      "name": "Oracle Cloud Infrastructure 2023 Certified Foundations Associate",
+      "issuer": "Oracle",
+      "date": "Apr 2024"
+    },
+    {
+      "name": "Journey to Cloud: Envisioning Your Solution",
+      "issuer": "IBM SkillsBuild",
+      "date": "Sep 2024"
+    },
+    {
+      "name": "MongoDB Node.js Developer Path for SmartBridge",
+      "issuer": "MongoDB",
+      "date": "Sep 2024"
+    },
+    {
+      "name": "Networking Essentials",
+      "issuer": "Cisco Networking Academy",
+      "date": "May 2023"
+    },
+    {
+      "name": "Learn Figma: UI/UX Design Masterclass",
+      "issuer": "Udemy",
+      "date": "Nov 2024"
+    }
+  ],
+  "skills": {
+    "Languages": ["Python", "Java", "JavaScript", "C", "C++"],
+    "Backend & APIs": ["Flask", "REST API design", "PHP", "Gunicorn", "Docker"],
+    "Frontend": ["HTML", "CSS", "JavaScript", "Figma (UI/UX)"],
+    "Databases": ["MySQL", "SQLite", "relational schema design"],
+    "Cloud & DevOps": ["Oracle Cloud Infrastructure (OCI)", "Docker containerization", "Git/GitHub"],
+    "Other": ["OpenCV", "AES Encryption", "AI API integration (Gemini)", "SDLC practices"]
+  },
+  "projects": [
+    {
+      "name": "ERPilot AI — Multi-Tenant ERP SaaS Platform",
+      "dates": "Mar 2026 – Jun 2026",
+      "tech_stack": "Python, Flask, SQLite, Docker, Gemini API",
+      "github_link": "https://github.com/Iamgokul7/ERPilot-AI",
+      "bullet_variants": [
+        {
+          "tags": ["backend", "database", "fullstack"],
+          "text": "Architected a multi-tenant SaaS ERP system from scratch, designing a 7-table relational schema with tenant_id-based isolation to securely support unlimited tenants."
+        },
+        {
+          "tags": ["backend", "security", "fullstack"],
+          "text": "Built role-based access control (RBAC) and authentication workflows from first principles across 7 functional modules covering employees, inventory, suppliers, sales, and reporting."
+        },
+        {
+          "tags": ["backend", "api", "fullstack"],
+          "text": "Designed and implemented REST-based backend modules in Flask for employee management, inventory tracking, supplier management, and sales processing."
+        },
+        {
+          "tags": ["ai", "backend", "fullstack"],
+          "text": "Integrated the Gemini API to power an AI assistant inside the ERP for context-aware business queries, with logging for every AI interaction."
+        },
+        {
+          "tags": ["devops", "deployment", "backend"],
+          "text": "Containerized the full application with Docker and configured a production-ready deployment path using Gunicorn."
+        }
+      ]
+    },
+    {
+      "name": "Graphical Password Authentication with Data Hiding — Final Year Project",
+      "dates": "Jan 2025 – May 2025",
+      "tech_stack": "Python, Flask, OpenCV, AES Encryption, DWT Steganography, SQLite",
+      "github_link": "https://github.com/Iamgokul7/Graphical-Password-Authentication-With-Data-Hiding",
+      "bullet_variants": [
+        {
+          "tags": ["security", "backend", "fullstack"],
+          "text": "Engineered a 3-factor authentication framework combining username/password validation, graphical image verification, and PIN-based authentication to strengthen user security."
+        },
+        {
+          "tags": ["security", "backend", "image-processing"],
+          "text": "Implemented AES encryption for secure file protection and integrated DWT-based steganography for hidden data embedding and secure information sharing."
+        },
+        {
+          "tags": ["backend", "fullstack"],
+          "text": "Designed secure file upload, access-approval, and file-sharing workflows to improve confidentiality and access control mechanisms."
+        },
+        {
+          "tags": ["fullstack", "database", "backend"],
+          "text": "Built a full-stack web application integrating authentication modules, encrypted storage, image processing, and database-driven user management."
+        },
+        {
+          "tags": ["cloud", "security"],
+          "text": "Applied secure storage concepts inspired by distributed cloud architecture to enhance resilience against unauthorized access and data breaches."
+        }
+      ]
+    },
+    {
+      "name": "Real Estate Management System — Team Project",
+      "dates": "Apr 2024 – May 2024",
+      "tech_stack": "HTML, CSS, JavaScript, PHP, MySQL, XAMPP",
+      "github_link": "https://github.com/Iamgokul7/Real-Estate-Management-System",
+      "bullet_variants": [
+        {
+          "tags": ["fullstack", "frontend", "database"],
+          "text": "Built a full property management platform supporting listings, search/filtering, bookings, and inquiry workflows, backed by a normalized MySQL schema."
+        },
+        {
+          "tags": ["frontend", "fullstack"],
+          "text": "Developed admin modules for managing properties, feedback, and transaction records, with responsive interfaces across devices."
+        }
+      ]
+    }
+  ],
+  "internships": [
+    {
+      "company": "Ajashia Technologies",
+      "role": "Android App Development Intern",
+      "dates": "Feb 2025 – May 2025",
+      "bullet_variants": [
+        {
+          "tags": ["mobile", "android"],
+          "text": "Built Android features using Java and Kotlin, integrating Firebase backend services into application workflows."
+        },
+        {
+          "tags": ["qa", "testing", "mobile"],
+          "text": "Took part in design, testing, and debugging cycles, gaining direct exposure to mobile SDLC practices."
+        }
+      ]
+    },
+    {
+      "company": "Motion Cut",
+      "role": "Frontend Web Development Intern",
+      "dates": "Jan 2025 – Feb 2025",
+      "bullet_variants": [
+        {
+          "tags": ["frontend"],
+          "text": "Built responsive web interfaces in HTML/CSS validated across desktop and mobile breakpoints."
+        },
+        {
+          "tags": ["frontend", "design"],
+          "text": "Designed UI layouts in Figma, then implemented them as functioning frontend components."
+        }
+      ]
+    },
+    {
+      "company": "Mitsogo Technologies",
+      "role": "Skill Up Program Intern",
+      "dates": "Jul 2024 – Aug 2024",
+      "bullet_variants": [
+        {
+          "tags": ["frontend", "design"],
+          "text": "Contributed to wireframing, prototyping, and frontend implementation using HTML, CSS, and JavaScript within a collaborative team workflow."
+        }
+      ]
+    },
+    {
+      "company": "Codebind Technologies",
+      "role": "Web Design Intern",
+      "dates": "Jul 2023 – Aug 2023",
+      "bullet_variants": [
+        {
+          "tags": ["frontend"],
+          "text": "Designed and built responsive website layouts, focusing on cross-device usability and accessibility."
+        }
+      ]
+    }
+  ],
+  "summary_variants": [
+    {
+      "tags": ["sde", "backend", "python"],
+      "text": "Computer Science Engineering graduate specializing in full-stack web development with Python and Flask. Built and shipped a multi-tenant SaaS ERP platform from architecture through deployment, including REST API design, role-based access control, and AI integration. Comfortable across the stack: backend logic, database schema design, REST APIs, and frontend implementation."
+    },
+    {
+      "tags": ["qa", "testing", "automation"],
+      "text": "Software Engineering graduate with hands-on experience building multi-factor authentication systems and secure file protection pipelines. Skilled in frontend validation, REST API debugging, and mobile app design/testing cycles during professional internships."
+    },
+    {
+      "tags": ["fullstack", "web"],
+      "text": "Full Stack developer specializing in Python/Flask and JavaScript web applications. Experienced designing normalized databases, integrating generative AI, and building responsive Figma-to-code interfaces. Seeking roles to build features end-to-end."
+    },
+    {
+      "tags": ["sap", "erp", "consultant"],
+      "text": "Computer Science Engineering graduate with experience building a multi-tenant SaaS ERP system with modular tracking for inventory, sales, suppliers, and employees. Deep understanding of business isolation logic, reporting flows, and workflow coordination."
+    }
+  ]
+}

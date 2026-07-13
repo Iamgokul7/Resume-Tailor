@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ contact.name }} – Resume</title>
+  <style>
+    /* ----------------------------------------------------------------
+       ATS-safe PDF stylesheet — xhtml2pdf primary, WeasyPrint fallback
+       xhtml2pdf-specific properties:
+         -pdf-keep-with-next: true   → heading stays glued to next block
+    ---------------------------------------------------------------- */
+
+    @page {
+      size: letter portrait;
+      margin: 0.55in 0.65in 0.55in 0.65in;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      line-height: 1.25;
+      color: #1a1a1a;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .header {
+      text-align: center;
+      margin-bottom: 10pt;
+      padding-bottom: 6pt;
+    }
+
+    .name {
+      font-size: 18pt;
+      font-weight: bold;
+      letter-spacing: 0.5pt;
+      margin-bottom: 3pt;
+      text-transform: uppercase;
+    }
+
+    .contact-line {
+      font-size: 9pt;
+      color: #333;
+    }
+
+    /* ── Global link rule: professional blue, underlined, always clickable ─ */
+    a {
+      color: #0563C1;        /* standard PDF hyperlink blue */
+      text-decoration: underline;
+    }
+
+    a:visited {
+      color: #0563C1;
+    }
+
+    /* ── Section ─────────────────────────────────────────────── */
+    .section {
+      margin-top: 14pt;
+    }
+
+    /*
+      Section title — uses xhtml2pdf's -pdf-keep-with-next to force
+      the renderer to place this element on the same page as the next
+      sibling. This is the only reliable way to prevent orphaned headings
+      when using xhtml2pdf.
+    */
+    .section-title {
+      font-size: 9.5pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.8pt;
+      border-bottom: 0.5pt solid #1a1a1a;
+      padding-bottom: 1pt;
+      margin-bottom: 5pt;
+      /* xhtml2pdf: keep with following block */
+      -pdf-keep-with-next: true;
+      /* WeasyPrint / CSS3 */
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+
+    /* ── Summary ─────────────────────────────────────────────── */
+    .summary-text {
+      font-size: 9.5pt;
+      line-height: 1.25;
+      text-align: justify;
+    }
+
+    /* ── Skills ──────────────────────────────────────────────── */
+    .skills-row {
+      font-size: 9.5pt;
+      margin-bottom: 2.5pt;
+      line-height: 1.25;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* ── Entry (project / internship / education) ─────────────── */
+    .entry {
+      margin-bottom: 7pt;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .entry-header {
+      margin-bottom: 2pt;
+      /* xhtml2pdf: keep heading row with the next sibling (tech/role line) */
+      -pdf-keep-with-next: true;
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+
+    .entry-dates {
+      font-size: 9.5pt;
+      color: #444;
+      font-weight: normal;
+    }
+
+    .entry-name {
+      font-size: 10pt;
+      font-weight: bold;
+    }
+
+    .entry-sub-line {
+      font-size: 9.5pt;
+      color: #444;
+      margin-bottom: 2.5pt;
+    }
+
+    .project-sub-line {
+      font-size: 9pt;
+      font-style: italic;
+      color: #555;
+      margin-bottom: 2.5pt;
+      -pdf-keep-with-next: true;
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    /* project links inherit the global a { color } rule — no override needed */
+
+    /* ── Bullets ─────────────────────────────────────────────── */
+    ul.bullets {
+      margin-left: 12pt;
+      margin-top: 2pt;
+      list-style-type: disc;
+      padding-left: 0;
+    }
+
+    ul.bullets li {
+      font-size: 9.5pt;
+      margin-bottom: 1.5pt;
+      line-height: 1.25;
+      text-align: justify;
+    }
+
+    /* ── Cert entry ──────────────────────────────────────────── */
+    .cert-entry {
+      font-size: 9.5pt;
+      margin-bottom: 2.5pt;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    /* ── Education extra ──────────────────────────────────────── */
+    .edu-coursework {
+      font-size: 9pt;
+      color: #444;
+      margin-top: 1pt;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ================================================================
+       HEADER – Name + Contact
+  ================================================================ -->
+  <div class="header">
+    <div class="name">{{ contact.name }}</div>
+    <div class="contact-line">
+      {{ contact.location }}
+      {% if contact.email %} | <a href="mailto:{{ contact.email }}">{{ contact.email | display_url }}</a>{% endif %}
+      {% if contact.phone %} | <a href="tel:{{ contact.phone | replace(' ', '') }}">{{ contact.phone }}</a>{% endif %}
+      {% if contact.github %} | <a href="{{ contact.github | absolute_url }}">GitHub: {{ contact.github | display_url }}</a>{% endif %}
+      {% if contact.portfolio %} | <a href="{{ contact.portfolio | absolute_url }}">Portfolio: {{ contact.portfolio | display_url }}</a>{% endif %}
+      {% if contact.linkedin %} | <a href="{{ contact.linkedin | absolute_url }}">LinkedIn: {{ contact.linkedin | display_url }}</a>{% endif %}
+    </div>
+  </div>
+
+  <!-- ================================================================
+       PROFESSIONAL SUMMARY
+  ================================================================ -->
+  {% if summary %}
+  <div class="section" style="margin-top: 10pt;">
+    <div class="section-title">Professional Summary</div>
+    <div class="summary-text">{{ summary }}</div>
+  </div>
+  {% endif %}
+
+  <!-- ================================================================
+       TECHNICAL SKILLS
+  ================================================================ -->
+  {% if skills_selected %}
+  <div class="section">
+    <div class="section-title">Technical Skills</div>
+    {% for sg in skills_selected %}
+    <div class="skills-row">
+      <b>{{ sg['category'] }}:</b> {{ sg['items'] | join(", ") }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ================================================================
+       FLAGSHIP PROJECTS
+  ================================================================ -->
+  {% if flagship_projects_selected %}
+  <div class="section">
+    <div class="section-title">Flagship Projects</div>
+    {% for proj in flagship_projects_selected %}
+    <div class="entry">
+      <div class="entry-header">
+        <span class="entry-name">{{ proj.name }}</span>
+        <span class="entry-dates"> ({{ proj.dates }})</span>
+      </div>
+      <div class="project-sub-line">
+        {{ proj.tech_stack }}
+        {% if proj.github_link %}
+        | <a href="{{ proj.github_link | absolute_url }}">GitHub: {{ proj.github_link | display_url }}</a>
+        {% endif %}
+      </div>
+      {% if proj.bullets %}
+      <ul class="bullets">
+        {% for bullet in proj.bullets %}<li>{{ bullet }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ================================================================
+       OTHER PROJECTS
+  ================================================================ -->
+  {% if other_projects_selected %}
+  <div class="section">
+    <div class="section-title">Other Projects</div>
+    {% for proj in other_projects_selected %}
+    <div class="entry">
+      <div class="entry-header">
+        <span class="entry-name">{{ proj.name }}</span>
+        <span class="entry-dates"> ({{ proj.dates }})</span>
+      </div>
+        <div class="project-sub-line">
+          {{ proj.tech_stack }}
+          {% if proj.github_link %}
+          | <a href="{{ proj.github_link | absolute_url }}">GitHub: {{ proj.github_link | display_url }}</a>
+          {% endif %}
+        </div>
+      {% if proj.bullets %}
+      <ul class="bullets">
+        {% for bullet in proj.bullets %}<li>{{ bullet }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ================================================================
+       INTERNSHIP EXPERIENCE
+       Format: Company Name — Role  (dates)   ← single header line
+  ================================================================ -->
+  {% if internships_selected %}
+  <div class="section">
+    <div class="section-title">Internship Experience</div>
+    {% for intern in internships_selected %}
+    <div class="entry">
+      <div class="entry-header">
+        <span class="entry-name">{{ intern.company }}</span>
+        {% if intern.role %} &mdash; <span style="font-weight: normal; font-size: 9.5pt;">{{ intern.role }}</span>{% endif %}
+        <span class="entry-dates"> ({{ intern.dates }})</span>
+      </div>
+      {% if intern.bullets %}
+      <ul class="bullets">
+        {% for bullet in intern.bullets %}<li>{{ bullet }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ================================================================
+       EDUCATION
+  ================================================================ -->
+  {% if education %}
+  <div class="section">
+    <div class="section-title">Education</div>
+    {% for edu in education %}
+    <div class="entry">
+      <div class="entry-header">
+        <span class="entry-name">{{ edu.degree }}</span>
+        <span class="entry-dates"> ({{ edu.dates }})</span>
+      </div>
+      <div class="entry-sub-line">
+        {{ edu.institution }}{% if edu.gpa %} &mdash;
+          {#- Detect school-level certificates to show "Score" instead of "CGPA" -#}
+          {% set deg_lower = edu.degree | lower %}
+          {% set gpa_str = edu.gpa | string | trim %}
+          {% if 'secondary' in deg_lower or 'ssc' in deg_lower or 'hsc' in deg_lower
+             or '(x)' in deg_lower or '(xii)' in deg_lower
+             or 'xii' in deg_lower or ' x ' in (' ' ~ deg_lower ~ ' ')
+             or '10th' in deg_lower or '12th' in deg_lower
+             or 'matriculation' in deg_lower or 'higher secondary' in deg_lower %}Score: {{ gpa_str }}{% if '%' not in gpa_str %}%{% endif %}
+          {%- else %}CGPA: {{ gpa_str }}{% if '/' not in gpa_str %}/10.00{% endif %}
+          {%- endif %}
+        {%- endif %}
+      </div>
+      {% if edu.relevant_coursework and edu.relevant_coursework.strip().lower() not in ["n/a", "none", "not applicable", ""] %}
+      <div class="edu-coursework">Coursework: {{ edu.relevant_coursework }}</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ================================================================
+       CERTIFICATIONS
+  ================================================================ -->
+  {% if certifications %}
+  <div class="section">
+    <div class="section-title">Certifications</div>
+    {% for cert in certifications %}
+    <div class="cert-entry">
+      <b>{{ cert.name }}</b> &mdash; {{ cert.issuer }}{% if cert.date %}, {{ cert.date }}{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</body>
+</html>

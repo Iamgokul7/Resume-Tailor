@@ -1,0 +1,35 @@
+# Python virtual environment
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment variables — NEVER commit the real .env
+.env
+
+resume_bank.json
+
+# Generated PDFs
+output/*.pdf
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+*.exe
+
+
+

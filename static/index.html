@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ResumeTailor – AI-Powered Resume Generator</title>
+  <meta name="description" content="Paste a job description and get a perfectly tailored, ATS-safe PDF resume generated from your personal content bank in seconds." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css?v=2" />
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════════════════════════
+       HEADER / HERO
+  ═════════════════════════════════════════════════════════════ -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">✦</span>
+        <span class="logo-text">ResumeTailor</span>
+      </div>
+      <p class="tagline">AI-powered. ATS-safe. Tailored in seconds.</p>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════════════════
+       MAIN CONTENT
+  ═════════════════════════════════════════════════════════════ -->
+  <main class="app-main">
+
+    <!-- ── Input Panel ───────────────────────────────────────── -->
+    <section class="panel input-panel" id="input-section">
+      <div class="panel-header">
+        <span class="step-badge">01</span>
+        <h2 class="panel-title">Upload Your Existing Resume (PDF/DOCX)</h2>
+      </div>
+      <p class="panel-desc">
+        Upload your text-based PDF or DOCX resume. We will extract its text layer automatically.
+      </p>
+
+      <!-- ── File Upload Zone ── -->
+      <div class="upload-zone" id="upload-zone" onclick="triggerFileSelect()">
+        <input type="file" id="resume-file-input" accept=".pdf,.docx" style="display: none;" onchange="handleFileSelect(event)" />
+        <span class="upload-icon">📄</span>
+        <p class="upload-text">Drag & drop your resume here, or <span class="upload-browse">browse</span></p>
+        <p class="upload-note">Supports text-based PDF or DOCX format</p>
+      </div>
+
+      <!-- ── Uploaded File Card ── -->
+      <div class="file-card hidden" id="file-card">
+        <div class="file-info">
+          <span class="file-icon" id="file-icon">📄</span>
+          <div class="file-details">
+            <span class="file-name" id="file-name">my_resume.pdf</span>
+            <span class="file-size" id="file-size">145 KB</span>
+          </div>
+        </div>
+        <button class="file-remove" id="file-remove" onclick="removeSelectedFile()" aria-label="Remove selected file">✕</button>
+      </div>
+
+      <!-- ── Extracted Text Preview ── -->
+      <div class="preview-container hidden" id="extracted-preview-container">
+        <button class="preview-toggle-btn" id="preview-toggle-btn" onclick="toggleExtractedPreview()">
+          <span>🔍 Extracted Resume Text Preview</span>
+          <span class="toggle-arrow" id="preview-toggle-arrow">▼</span>
+        </button>
+        <div class="extracted-text-body collapsed" id="extracted-text-body">
+          <pre id="extracted-text-content"></pre>
+        </div>
+      </div>
+
+      <div class="panel-header" style="margin-top: 32px;">
+        <span class="step-badge">02</span>
+        <h2 class="panel-title">Paste Job Description</h2>
+      </div>
+      <p class="panel-desc">
+        Copy and paste the full job description of the role you are targeting.
+      </p>
+      <textarea
+        id="jd-input"
+        class="jd-textarea"
+        placeholder="Paste the full job description here…&#10;&#10;Example: We are looking for a Backend Engineer with 2+ years of experience in Python and REST APIs…"
+        spellcheck="false"
+        aria-label="Job description text area"
+      ></textarea>
+      <div class="char-count" id="jd-char-count">0 characters</div>
+
+      <button class="btn btn-primary" id="generate-btn" onclick="analyzeKeywords()">
+        <span class="btn-icon">⚡</span>
+        Analyze Keywords & Match
+      </button>
+    </section>
+
+    <!-- ── Loading State ─────────────────────────────────────── -->
+    <section class="panel loading-panel hidden" id="loading-section" aria-live="polite">
+      <div class="loader-ring">
+        <div class="ring-segment"></div>
+        <div class="ring-segment"></div>
+        <div class="ring-segment"></div>
+        <div class="ring-segment"></div>
+      </div>
+      <h2 class="loading-title">Tailoring your resume…</h2>
+      <div class="loading-steps" id="loading-steps">
+        <div class="step-item active" id="step-gemini">
+          <span class="step-dot"></span> Calling Gemini AI
+        </div>
+        <div class="step-item" id="step-pdf">
+          <span class="step-dot"></span> Generating PDF
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Error State ────────────────────────────────────────── -->
+    <section class="panel error-panel hidden" id="error-section" role="alert">
+      <div class="error-icon">✕</div>
+      <h2 class="error-title">Something went wrong</h2>
+      <p class="error-message" id="error-message"></p>
+      <button class="btn btn-outline" onclick="resetToInput()">Try Again</button>
+    </section>
+
+    <!-- ── Step 2: Keyword Selector Panel ─────────────────────── -->
+    <section class="panel keyword-selector-panel hidden" id="keyword-section">
+      <div class="panel-header" style="margin-bottom: 20px;">
+        <h2 class="panel-title">Step 2: Select Keywords to Integrate</h2>
+        <p class="panel-subtitle" style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">
+          Review the matched and gap keywords. Click tags in either box to select which terms you want to weave into your final resume.
+        </p>
+      </div>
+
+      <div class="match-analysis-card">
+        <div class="match-analysis-header" style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 20px;">
+          <div class="match-score-container">
+            <span class="match-score-label">Initial Match Score</span>
+            <span class="match-score-value" id="initial-match-score-value">0%</span>
+          </div>
+          <div class="match-fit-note" id="initial-match-fit-note"></div>
+        </div>
+
+        <div class="keyword-boxes-grid">
+          <!-- Box 1: Original Resume Keywords -->
+          <div class="keyword-box">
+            <h4>Original Resume Keywords <span style="font-size: 10px; font-weight: 400; text-transform: none; color: var(--text-muted);">(Click to toggle)</span></h4>
+            <div class="keyword-tags-container" id="box-master-keywords">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+          
+          <!-- Box 2: JD Keywords (Target) -->
+          <div class="keyword-box">
+            <h4>JD Keywords (Target) <span style="font-size: 10px; font-weight: 400; text-transform: none; color: var(--text-muted);">(Click to toggle)</span></h4>
+            <div class="keyword-tags-container" id="box-jd-keywords">
+              <!-- Populated dynamically as toggle buttons -->
+            </div>
+          </div>
+          
+          <!-- Box 3: Keywords to Integrate -->
+          <div class="keyword-box">
+            <h4>Keywords to Integrate</h4>
+            <div class="keyword-tags-container" id="box-tailored-keywords">
+              <!-- Populated dynamically based on toggled tags in Box 2 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="keyword-action-row" style="display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end;">
+        <button class="btn btn-outline" onclick="resetToInput()">
+          ↩ Back to Inputs
+        </button>
+        <button class="btn btn-primary" id="tailor-btn" onclick="generateTailoredResume()">
+          ⚡ Tailor My Resume Now
+        </button>
+      </div>
+    </section>
+
+    <!-- ── Results Panel ─────────────────────────────────────── -->
+    <section class="panel result-panel hidden" id="result-section">
+      <div class="result-header">
+        <div class="result-title-row">
+          <span class="success-badge">✓ Resume Ready</span>
+          <h2 class="panel-title">Your Tailored Resume</h2>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-primary" id="download-btn" onclick="downloadPDF()">
+            <span class="btn-icon">↓</span> Download PDF
+          </button>
+          <button class="btn btn-outline" id="copy-btn" onclick="copyPlainText()">
+            <span class="btn-icon">⧉</span> Copy as Plain Text
+          </button>
+          <button class="btn btn-ghost" onclick="resetToInput()">
+            ↩ New Resume
+          </button>
+        </div>
+      </div>
+
+      <!-- Warnings Card -->
+      <div id="warnings-container" class="hidden" style="background-color: #FFF3CD; border: 1px solid #FFEBAA; border-radius: 8px; padding: 16px; margin-bottom: 20px; color: #856404;">
+        <h4 style="margin-top: 0; margin-bottom: 8px; font-weight: 600;">⚠️ Quality Gate Warnings:</h4>
+        <ul id="warnings-list" style="margin-left: 20px; font-size: 13px;"></ul>
+      </div>
+
+      <!-- Match Analysis Card -->
+      <div class="match-analysis-card hidden" id="match-analysis-card">
+        <div class="match-analysis-header">
+          <div class="match-score-container">
+            <span class="match-score-label">Job Match Score</span>
+            <span class="match-score-value" id="match-score-value">0%</span>
+          </div>
+          <div class="match-fit-note" id="match-fit-note"></div>
+        </div>
+        <div class="match-analysis-grid">
+          <div class="match-column">
+            <h3>✓ You Match</h3>
+            <ul id="match-list" class="match-items-list"></ul>
+          </div>
+          <div class="match-column">
+            <h3>✗ Gap Areas</h3>
+            <ul id="gap-list" class="gap-items-list"></ul>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Preview sections -->
+      <div class="preview-content" id="preview-content">
+
+        <!-- Summary -->
+        <div class="preview-section" id="preview-summary"></div>
+
+        <!-- Skills -->
+        <div class="preview-section" id="preview-skills"></div>
+
+        <!-- Projects -->
+        <div class="preview-section" id="preview-projects"></div>
+
+        <!-- Internships -->
+        <div class="preview-section" id="preview-internships"></div>
+
+        <!-- Education -->
+        <div class="preview-section" id="preview-education"></div>
+
+        <!-- Certifications -->
+        <div class="preview-section" id="preview-certs"></div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ════════════════════════════════════════════════════════════
+       FOOTER
+  ═════════════════════════════════════════════════════════════ -->
+  <footer class="app-footer">
+    <p>ResumeTailor runs 100% locally &mdash; your data never leaves your machine.</p>
+  </footer>
+
+  <script src="/static/app.js?v=5"></script>
+</body>
+</html>
