@@ -193,7 +193,7 @@
       {{ edu.institution }}
       {%- if edu.gpa %} &mdash; 
         {%- set deg_lower = edu.degree | lower -%}
-        {%- set gpa_str = edu.gpa | string | trim -%}
+        {%- set gpa_str = edu.gpa | string | replace('Score:', '') | replace('score:', '') | replace('CGPA:', '') | replace('cgpa:', '') | trim -%}
         {%- if 'secondary' in deg_lower or 'ssc' in deg_lower or 'hsc' in deg_lower
            or '(x)' in deg_lower or '(xii)' in deg_lower
            or 'xii' in deg_lower or ' x ' in (' ' ~ deg_lower ~ ' ')

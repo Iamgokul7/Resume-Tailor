@@ -475,6 +475,31 @@ function renderResult(data) {
     matchCard.classList.add("hidden");
   }
 
+  // ── Contact Info ──
+  const contactEl = $("preview-contact");
+  if (contactEl && tailored.contact) {
+    const c = tailored.contact;
+    const infoParts = [];
+    if (c.email) infoParts.push(escHtml(c.email));
+    if (c.phone) infoParts.push(escHtml(c.phone));
+    if (c.location) infoParts.push(escHtml(c.location));
+    
+    const linkParts = [];
+    if (c.linkedin) linkParts.push(`<a href="${escHtml(c.linkedin)}" target="_blank" rel="noopener" class="preview-link">LinkedIn</a>`);
+    if (c.github) linkParts.push(`<a href="${escHtml(c.github)}" target="_blank" rel="noopener" class="preview-link">GitHub</a>`);
+    if (c.portfolio) linkParts.push(`<a href="${escHtml(c.portfolio)}" target="_blank" rel="noopener" class="preview-link">Portfolio</a>`);
+
+    contactEl.innerHTML = `
+      <div class="preview-contact-header" style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid var(--border); padding-bottom: 16px;">
+        <h1 style="margin: 0 0 8px 0; font-size: 26px; font-weight: 800; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px;">${escHtml(c.name || "Your Name")}</h1>
+        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px; font-weight: 500;">${infoParts.join(" &nbsp;|&nbsp; ")}</div>
+        <div style="font-size: 13px; color: var(--primary); display: flex; justify-content: center; gap: 16px; font-weight: 600;">${linkParts.join("")}</div>
+      </div>
+    `;
+  } else if (contactEl) {
+    contactEl.innerHTML = "";
+  }
+
   // ── Summary ──
   const summaryEl = $("preview-summary");
   if (tailored.summary) {
@@ -570,15 +595,32 @@ function renderResult(data) {
   // ── Education ──
   const eduEl = $("preview-education");
   if (tailored.education && tailored.education.length > 0) {
-    const entries = tailored.education.map(e => `
+    const entries = tailored.education.map(e => {
+      let gpaStr = "";
+      if (e.gpa) {
+        const degLower = (e.degree || "").toLowerCase();
+        const gpaClean = String(e.gpa).replace(/Score:/gi, "").replace(/CGPA:/gi, "").trim();
+        const isSchool = degLower.includes("secondary") || degLower.includes("ssc") || degLower.includes("hsc") ||
+                         degLower.includes("(x)") || degLower.includes("(xii)") || degLower.includes("xii") ||
+                         degLower.includes("10th") || degLower.includes("12th") || degLower.includes("matriculation") ||
+                         degLower.includes("higher secondary") || (degLower.split(/\s+/).includes("x"));
+        
+        if (isSchool) {
+          gpaStr = ` — Score: ${gpaClean}${gpaClean.includes("%") ? "" : "%"}`;
+        } else {
+          gpaStr = ` — CGPA: ${gpaClean}${gpaClean.includes("/") ? "" : "/10.00"}`;
+        }
+      }
+      return `
       <div class="edu-entry">
         <div class="entry-header-row">
           <span class="entry-name">${escHtml(e.institution || "")}</span>
           <span class="entry-dates">${escHtml(e.dates || "")}</span>
         </div>
-        <div class="entry-sub">${escHtml(e.degree || "")}${e.gpa ? ` — GPA: ${escHtml(e.gpa)}` : ""}</div>
+        <div class="entry-sub">${escHtml(e.degree || "")}${gpaStr}</div>
         ${e.relevant_coursework ? `<div class="entry-sub">Coursework: ${escHtml(e.relevant_coursework)}</div>` : ""}
-      </div>`).join("");
+      </div>`;
+    }).join("");
     eduEl.innerHTML = `<div class="preview-section-title">Education</div>${entries}`;
   } else {
     eduEl.innerHTML = "";
@@ -638,6 +680,25 @@ async function copyPlainText() {
   const r = currentResult;
   const lines = [];
 
+  // Contact Info
+  if (r.contact) {
+    const c = r.contact;
+    if (c.name) lines.push(c.name.toUpperCase());
+    const info = [];
+    if (c.email) info.push(c.email);
+    if (c.phone) info.push(c.phone);
+    if (c.location) info.push(c.location);
+    if (info.length > 0) lines.push(info.join("  |  "));
+    
+    const links = [];
+    if (c.linkedin) links.push(`LinkedIn: ${c.linkedin}`);
+    if (c.github) links.push(`GitHub: ${c.github}`);
+    if (c.portfolio) links.push(`Portfolio: ${c.portfolio}`);
+    if (links.length > 0) lines.push(links.join("  |  "));
+    
+    lines.push("");
+  }
+
   // Summary
   if (r.summary) {
     lines.push("PROFESSIONAL SUMMARY");
@@ -654,7 +715,31 @@ async function copyPlainText() {
     lines.push("");
   }
 
-  // Projects
+  // Flagship Projects
+  if (r.flagship_projects_selected && r.flagship_projects_selected.length > 0) {
+    lines.push("FLAGSHIP PROJECTS");
+    r.flagship_projects_selected.forEach(p => {
+      lines.push(`${p.name}  |  ${p.dates}`);
+      if (p.tech_stack) lines.push(`Tech: ${p.tech_stack}`);
+      if (p.github_link) lines.push(`GitHub: ${p.github_link}`);
+      (p.bullets || []).forEach(b => lines.push(`• ${b}`));
+      lines.push("");
+    });
+  }
+
+  // Other Projects
+  if (r.other_projects_selected && r.other_projects_selected.length > 0) {
+    lines.push("OTHER PROJECTS");
+    r.other_projects_selected.forEach(p => {
+      lines.push(`${p.name}  |  ${p.dates}`);
+      if (p.tech_stack) lines.push(`Tech: ${p.tech_stack}`);
+      if (p.github_link) lines.push(`GitHub: ${p.github_link}`);
+      (p.bullets || []).forEach(b => lines.push(`• ${b}`));
+      lines.push("");
+    });
+  }
+
+  // Projects (General Fallback)
   if (r.projects_selected && r.projects_selected.length > 0) {
     lines.push("PROJECTS");
     r.projects_selected.forEach(p => {

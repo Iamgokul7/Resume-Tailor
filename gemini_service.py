@@ -30,72 +30,76 @@ logger = logging.getLogger(__name__)
 # Ordered list of known-working model names for automatic fallback
 GEMINI_MODELS = ["gemini-3.1-flash-lite", "gemini-2.0-flash", "gemini-2.5-flash"]
 
-SYSTEM_INSTRUCTION = """You are a professional resume tailoring assistant and senior recruiter. Your job is to extract contact details, build a semantic profile of the candidate, perform an intelligent semantic analysis of the Job Description (JD), select a dynamic resume strategy, and generate a tailored resume along with a scoring dashboard.
+SYSTEM_INSTRUCTION = """You are an experienced Senior Technical Recruiter. Your job is to act as a professional resume tailoring assistant: extract contact details, build a semantic profile of the candidate, perform an intelligent semantic analysis of the Job Description (JD), select a dynamic resume strategy, and generate a tailored resume along with a scoring dashboard.
 
 Follow these instructions strictly to ensure the tailored output is of the highest quality:
 
-1. INTELLIGENT JOB DESCRIPTION (JD) UNDERSTANDING & DYNAMIC REORDERING:
-   - Semantically analyze the JD to prioritize requirements:
-     * HIGH PRIORITY: Core programming languages, frameworks, tech skills, required years of experience, and primary responsibilities.
-     * MEDIUM PRIORITY: Preferred tools, methodologies, testing practices, databases, DevOps, security, and cloud ecosystems.
-     * LOW PRIORITY: Equal opportunity statements, legal disclaimers, fraud warnings, marketing pitches, benefits.
-   - Ignore company marketing, benefits, and low priority statements completely.
-   - Dynamically identify the core focus of the target job (e.g., Backend, Frontend, Cloud, QA, Cybersecurity, Data Analyst, Business Analyst, Support, SAP/ERP, AI/ML, etc.) and automatically reorder the Technical Skill categories to place the most important domain categories first. Do not use fixed templates. Within each category, prioritize the individual items by relevance.
-   - Only reorder existing skills from the candidate's master resume. Do not invent new skills.
+1. SOURCE OF TRUTH:
+   - The uploaded master resume is the ONLY factual source.
+   - You may rewrite, reorder, regroup, normalize, compress, improve wording, improve formatting, and tailor content.
+   - You must NEVER: invent experience, invent projects, invent skills, invent certifications, invent education, invent technologies, invent metrics, invent achievements, invent responsibilities, invent company names, or invent dates.
+   - Truthfulness always overrides ATS optimization.
 
-2. TECHNICAL SKILL NORMALIZATION:
-   - Reduce redundancy in technical skills by grouping related items under normalized category headings. For example, instead of separate items for 'MySQL' and 'SQLite' under a flat list, prefer 'Relational Databases (MySQL, SQLite)' where it improves readability. Instead of 'OCI', prefer 'Cloud Platforms (Oracle Cloud Infrastructure)'. Ensure all original technologies are preserved and normalized rather than deleted. Normalization must only be done when it improves readability.
+2. PROFESSIONAL FORMATTING & ATS FRIENDLINESS:
+   - Generate a clean, single-column, ATS-safe layout with consistent spacing and margins.
+   - Use ATS-safe fonts (Calibri, Arial, Helvetica, Aptos, Carlito). Keep whitespace balanced.
+   - Clickable hyperlinks for Name, Email, Phone, LinkedIn, GitHub, Portfolio (if present) must be preserved in the contact section.
 
-3. IMPACT-FOCUSED BULLET REWRITING:
-   - Rewrite project and internship bullets to emphasize the outcome, purpose, or functional impact of the tasks rather than just describing the tasks.
-   - Good examples:
-     * Instead of: 'Developed REST APIs.' -> Prefer: 'Developed REST APIs supporting secure data exchange across multiple application modules.'
-     * Instead of: 'Tested application.' -> Prefer: 'Performed functional and regression testing to identify defects and improve application reliability.'
-   - CRITICAL SAFETY RULE: Never fabricate metrics, percentages, business impact, scale, or outcomes. If no metric or business outcome exists in the source resume, rewrite only for clarity, purpose, and stronger active wording, preserving absolute factual truthfulness.
+3. DYNAMIC SECTION ORDER:
+   - The order of sections should adapt dynamically to the candidate's experience level:
+     * Typical fresher order: Header, Professional Summary, Technical Skills, Flagship Projects, Other Projects, Experience / Internships, Education, Certifications, Awards / Publications (if present).
+     * Typical experienced order: Header, Professional Summary, Experience, Technical Skills, Projects, Education, Certifications.
 
-4. SEMANTIC JD MAPPING:
-   - Ensure high semantic mapping rather than verbatim keyword mirroring. If the JD uses a generic term (e.g., 'Software Applications' or 'Internet-related tools') and the candidate has a specific, truthful equivalent experience (e.g., 'REST APIs' or 'Web Applications'), use the candidate's specific terms instead of copying the broad/vague JD wording. Express experience naturally. Never copy generic JD phrases blindly without candidate-supported context.
+4. PROFESSIONAL SUMMARY:
+   - Generate a brand-new professional summary under 4-5 lines maximum for every JD.
+   - Open immediately with the candidate's actual professional identity and key expertise. Avoid generic buzzwords (e.g. "Highly motivated", "Results-driven", "Passionate", "Dynamic individual", "Looking forward to contributing").
+   - Tone should sound written by an experienced recruiter: natural, professional, technically accurate, and easy to scan.
 
-5. REWRITING BULLETS LIKE A SENIOR RECRUITER & TARGET COUNT:
-   - Rewrite project and internship bullets to be concise, natural, and achievement-oriented.
-   - Lead every bullet with a strong action verb (e.g., Designed, Built, Developed, Implemented, Integrated, Created, Validated, Improved, Optimized, Configured, Analyzed, Tested, Maintained, Refined, Documented, Verified, Reviewed, Generated, Debugged).
-   - NEVER overuse verbs like "Engineered", "Architected", "Leveraged", "Utilized", "Programmed" unless context genuinely requires it.
-   - Avoid AI-sounding robotic phrases or keyword dumping. Every sentence must read naturally and vary in structure.
-   - Target approximately 18–25 words per bullet point for readability.
+5. TECHNICAL SKILLS:
+   - Preserve every verified skill. Never invent or remove technical skills.
+   - Group technologies into recruiter-friendly, specific categories whenever appropriate (e.g., Programming Languages, Backend & APIs, Testing & QA, Databases, Cloud & DevOps, Frontend, Data & AI) rather than combining unrelated technologies under broad headings like 'Languages & Frameworks'.
+   - Place specific technologies into their logically correct categories (e.g. 'REST APIs' and 'Flask' under Backend Frameworks/APIs; 'Docker' and 'Kubernetes' under Cloud & DevOps; 'MongoDB' and 'PostgreSQL' under Databases, etc.).
+   - Reorder skill categories dynamically so the most JD-relevant ones appear first.
+   - Group related skills to reduce redundancy (e.g., 'Relational Databases (MySQL, SQLite)', 'Cloud Platforms (Oracle Cloud Infrastructure)'). Normalization must never cause information loss.
 
-6. PROFESSIONAL SUMMARY REWRITING:
-   - Generate a brand-new professional summary under 4 lines for every JD.
-   - Reflect the candidate's actual background and highlight the most relevant skills matching the target role naturally.
-   - NEVER use generic buzzword openings (e.g., "Forward-thinking", "Passionate", "Results-driven", "Dynamic", "Detail-oriented"). Open immediately with the candidate's actual professional identity and key expertise.
-   - Never mention the target company's name.
+6. PROJECTS:
+   - Never delete projects. Every project from the uploaded master resume must remain (though they can be reordered).
+   - Project names and technologies must never change. Wording of bullets may be rewritten professionally.
+   - Present project technologies consistently under a 'Tech Stack: Python • Flask • Docker • SQLite' header with a consistent separator.
 
-7. INTELLIGENT BULLET PRIORITIZATION:
-   - Within each project and internship, sort bullets by relevance to the JD (e.g., database/API work first for a backend role, test automation/regression testing first for a QA role, etc.).
+7. EXPERIENCE / INTERNSHIPS:
+   - Every experience and internship entry must remain. Do not omit, delete, or merge entries.
+   - Chronology always wins: order experience chronologically with the newest first and oldest last. Do not reorder by relevance.
 
-8. STRONG ACTION VERB ROTATION & ACTIVE VOICE:
-   - Do NOT repeat the same starting verb multiple times within a project or experience section. Rotate naturally to show diverse capability.
-   - Use active voice exclusively. Do not write passive sentences (e.g. "A system was built by...").
+8. EDUCATION:
+   - Education is factual and must never be tailored or deleted. All entries from the uploaded resume must remain.
+   - Order chronologically with the highest/most recent qualification first.
+   - For Bachelor's, Master's, PhD, Diploma, or equivalent university/college degrees, represent scores exactly as CGPA: X.XX / 10.00 using the factual value from the master resume.
+   - For school-level degrees/certificates (HSC, SSC, XII, X, Matriculation, Secondary School, High School), mention scores exactly as Score: XX% using the factual value from the master resume. Do not prepend extra duplicate labels. Never convert or fabricate scores.
 
-9. KEYWORD INTEGRATION ENGINE (STRICT HONESTY):
-   - Truthfulness is your highest priority. Never fabricate, exaggerate, or stretch claims. Everything must be directly traceable to the master resume.
-   - Integrate keywords naturally within meaningful sentences. If a keyword cannot be truthfully integrated based on the candidate's real experience, do not add it.
+9. CERTIFICATIONS:
+   - Every certification must remain. Never delete, replace, or summarize certifications. Reorder only if needed. Certification names, issuers, and dates must remain unchanged.
 
-10. EDUCATION & GRADE FORMATTING:
-    - For B.E., B.Tech, M.Tech, MCA, MBA, or other university/college degrees, represent scores as CGPA / 10.00 (e.g. "9.1/10.00" or "8.5/10.00" depending on the master resume score).
-    - For school-level degrees/certificates (HSC, SSC, XII, X, Matriculation), mention scores as percentages (e.g. "92%").
-    - Do NOT add coursework unless it exists verbatim in the master resume's education entry.
+10. RECRUITER WRITING STYLE & SPACE MANAGEMENT:
+    - Lead bullets with strong action verbs. Rotate starting verbs naturally. Use active voice exclusively.
+    - Focus on outcomes/purpose, but never fabricate metrics.
+    - Each bullet should occupy approximately two lines maximum in the final PDF (target: 18-25 words).
+    - If the resume exceeds target length, shorten bullets, remove redundant wording, merge repetitive bullet descriptions, and tighten formatting. Do not delete factual sections or entries unless explicitly requested.
 
-11. RESUME SCORING DASHBOARD:
+11. ATS OPTIMIZATION:
+    - Integrate JD keywords naturally. Avoid keyword stuffing. Use semantic equivalents and map concepts intelligently (e.g., replace generic 'Internet-related tools' with candidate-supported specific terms like 'REST APIs' or 'Web Applications').
+
+12. RESUME SCORING DASHBOARD:
     - Assess the final tailored resume against the JD to generate realistic scores and professional feedback:
-      * "ats_score": Integer (0-100) based on clean formatting (no tables, single column, standard headings, machine-readability).
+      * "ats_score": Integer (0-100) based on clean formatting (no tables, single column, machine-readability).
       * "ats_explanation": Clear rationale for the ATS score.
-      * "readability_score": Integer (0-100) based on senior recruiter bullet quality, active verbs, flow, and word count.
+      * "readability_score": Integer (0-100) based on bullet quality, active verbs, flow, and word count.
       * "readability_explanation": Clear rationale for readability.
       * "match_score": Integer (0-100) representing true capability fit against the prioritized JD requirements.
       * "match_explanation": Clear rationale for match score.
       * "keyword_coverage": Integer (0-100) percentage of selected keywords integrated.
       * "missing_skills": List of important skills from the JD missing in the candidate's profile.
-      * "weaknesses": List of potential weaknesses in the candidate's match profile (e.g. gaps in specific technologies).
+      * "weaknesses": List of potential weaknesses in the candidate's match profile.
       * "strengths": List of candidate's strongest matching points.
       * "improvements": List of actionable improvement suggestions.
 
@@ -277,24 +281,54 @@ a professional resume writer: clear, concise, achievement-oriented sentences tha
 Sort bullets within each project or experience by relevance to the JD, rotate starting action verbs naturally, \
 and use active voice. Do not add any text outside the JSON object."""
 
-    try:
-        response = generate_content_with_fallback(
-            client=client,
-            prompt=prompt,
-            system_instruction=SYSTEM_INSTRUCTION,
-            temperature=0.4
-        )
-    except Exception as exc:
-        logger.error("All models failed during tailoring: %s", exc)
-        raise
+    # 1. Parse/extract master entities first
+    master_entities = extract_master_entities(master_resume)
 
-    raw_text: str = response.text
-    logger.info("Received Gemini response (%d chars).", len(raw_text))
+    finalized = None
+    quality_warnings = []
+    dashboard_data = None
+    feedback_instruction = ""
 
-    tailored_data, dashboard_data = _parse_json_response(raw_text)
-    cleaned = clean_tailored_resume(tailored_data, master_resume)
-    finalized, quality_warnings = validate_and_correct_resume(cleaned, master_resume, jd_text)
-    
+    # Self-correction loop: Run up to 3 attempts
+    for attempt in range(3):
+        current_prompt = prompt
+        if feedback_instruction:
+            current_prompt += f"\n\n⚠️ PREVIOUS ATTEMPT REJECTED due to missing information or formatting issues. Please fix these:\n{feedback_instruction}"
+
+        try:
+            response = generate_content_with_fallback(
+                client=client,
+                prompt=current_prompt,
+                system_instruction=SYSTEM_INSTRUCTION,
+                temperature=0.4
+            )
+        except Exception as exc:
+            logger.error("All models failed during tailoring: %s", exc)
+            raise
+
+        raw_text: str = response.text
+        logger.info("Received Gemini response (%d chars) on attempt %d.", len(raw_text), attempt + 1)
+
+        try:
+            tailored_data, dashboard_data = _parse_json_response(raw_text)
+            cleaned = clean_tailored_resume(tailored_data, master_resume)
+            finalized, quality_warnings = validate_and_correct_resume(cleaned, master_resume, jd_text, master_entities)
+            
+            # Check completeness against master entities
+            completeness_errors = check_completeness(master_entities, finalized)
+            if not completeness_errors:
+                logger.info("Tailored resume passed completeness validation on attempt %d.", attempt + 1)
+                break
+            else:
+                logger.warning("Tailored resume failed completeness validation (attempt %d/3): %s", attempt + 1, completeness_errors)
+                feedback_instruction = "\n".join(f"- {err}" for err in completeness_errors)
+        except Exception as exc:
+            logger.exception("Error parsing/validating tailored resume on attempt %d: %s", attempt + 1, exc)
+            feedback_instruction = f"Failed to parse or validate JSON response. Ensure the output is valid JSON according to the schema."
+
+    if not finalized:
+        raise ValueError("Failed to generate a complete tailored resume after 3 attempts.")
+
     if not dashboard_data:
         dashboard_data = _generate_fallback_dashboard(finalized, jd_text)
 
@@ -369,6 +403,145 @@ def generate_content_with_fallback(
     if last_exception:
         raise last_exception
     raise RuntimeError("All models failed to generate content.")
+
+
+def extract_master_entities(master_resume: str) -> dict[str, Any]:
+    """
+    Extracts all unique factual entities grouped by sections (and skills, contact) from the raw master resume.
+    """
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not api_key:
+        return {}
+
+    from google import genai
+    from google.genai import types as genai_types
+    client = genai.Client(api_key=api_key)
+
+    system_instruction = """You are an expert resume parser. Your job is to extract every unique factual entity and detail from the candidate's resume raw text.
+Do NOT assume any specific resume structure. Dynamically detect all sections present in the resume text.
+
+For each section (such as Work Experience, Internships, Projects, Education, Certifications, Awards, Languages, Volunteer Work, Research, Publications, Achievements, etc.), extract all unique factual entities (e.g. company names, job titles, project names, degree names, university names, certification names, languages spoken, specific awards).
+
+Also extract all technical skills/technologies and contact details (email, phone, links/URLs).
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "sections": [
+    {
+      "name": "<section name, e.g. Education, Projects, Experience>",
+      "entities": ["<entity 1, e.g. University of California, Berkeley>", "<entity 2, e.g. Bachelor of Science in Computer Science>"]
+    }
+  ],
+  "skills": ["<skill 1>", "<skill 2>"],
+  "contact": ["<contact item 1, e.g. alex.jordan@email.com>", "<contact item 2, e.g. https://github.com/alexjordan>"]
+}"""
+
+    prompt = f"Parse the following resume text and extract all unique factual entities section-by-section:\n\n{master_resume}"
+    try:
+        response = generate_content_with_fallback(
+            client=client,
+            prompt=prompt,
+            system_instruction=system_instruction,
+            temperature=0.1
+        )
+        cleaned = _strip_markdown_fences(response.text)
+        return json.loads(cleaned)
+    except Exception as exc:
+        logger.error("Failed to extract master entities: %s", exc)
+        return {
+            "sections": [],
+            "skills": [],
+            "contact": []
+        }
+
+
+def check_completeness(master_entities: dict[str, Any], tailored: dict[str, Any]) -> list[str]:
+    """
+    Compares master resume entities with the tailored resume dictionary.
+    Returns a list of error strings representing missing factual details.
+    """
+    errors = []
+    if not master_entities or not tailored:
+        return errors
+
+    # Helper to check if a string is present in a target (case-insensitive, handles normalization/acronyms/substrings)
+    def is_present(value: str, target: Any) -> bool:
+        if not value:
+            return True
+        val_lower = value.strip().lower()
+        if not val_lower:
+            return True
+
+        # Custom normalization rules for common variants
+        def clean_val(v: str) -> str:
+            v = v.lower()
+            v = re.sub(r"[\s\-]+", "", v)
+            v = v.replace("apis", "api").replace("libraries", "library").replace("frameworks", "framework")
+            return v
+
+        val_norm = clean_val(val_lower)
+
+        def _search(obj: Any) -> bool:
+            if isinstance(obj, str):
+                obj_lower = obj.lower()
+                if val_lower in obj_lower:
+                    return True
+                obj_norm = clean_val(obj_lower)
+                if val_norm in obj_norm or obj_norm in val_norm:
+                    return True
+                return False
+            elif isinstance(obj, dict):
+                return any(_search(v) for v in obj.values())
+            elif isinstance(obj, list):
+                return any(_search(item) for item in obj)
+            return False
+
+        return _search(target)
+
+    # 1. Validate generic sections and their entities
+    for sec in master_entities.get("sections", []):
+        sec_name = sec.get("name", "")
+        entities = sec.get("entities", [])
+        for ent in entities:
+            # We want to check if this entity is present anywhere in the tailored resume
+            if not is_present(ent, tailored):
+                # Try partial matching for compound strings (ignoring common role keywords)
+                tokens = [t for t in re.split(r"[\s,;/()\-]+", ent.lower()) if len(t) > 3 and t not in ["bachelor", "master", "science", "degree", "associate", "secondary", "higher", "technology", "engineering", "intern", "developer"]]
+                if tokens:
+                    found = False
+                    for t in tokens:
+                        if is_present(t, tailored):
+                            found = True
+                            break
+                    if not found:
+                        errors.append(f"Missing factual entity '{ent}' from section '{sec_name}'.")
+                else:
+                    errors.append(f"Missing factual entity '{ent}' from section '{sec_name}'.")
+
+    # 2. Check Technical Skills
+    for skill in master_entities.get("skills", []):
+        skill_clean = skill.strip().lower()
+        if len(skill_clean) < 3 or skill_clean in ["and", "with", "using", "for"]:
+            continue
+        
+        found = is_present(skill_clean, tailored)
+        if not found:
+            tokens = [t for t in re.split(r"[\s,;/()\-]+", skill_clean) if len(t) > 2]
+            if tokens:
+                for t in tokens:
+                    if is_present(t, tailored):
+                        found = True
+                        break
+        if not found:
+            errors.append(f"Missing technical skill '{skill}'.")
+
+    # 3. Check Contact Info & Links
+    for link in master_entities.get("contact", []):
+        if len(link.strip()) > 3:
+            if not is_present(link, tailored):
+                errors.append(f"Missing contact info or link '{link}'.")
+
+    return errors
 
 
 def clean_tailored_resume(data: dict[str, Any], master_resume: str) -> dict[str, Any]:
@@ -894,7 +1067,8 @@ Return the rewritten bullets as a valid JSON array of strings, e.g. ["bullet 1",
 def validate_and_correct_resume(
     tailored: dict[str, Any],
     master_resume: str,
-    jd_text: str
+    jd_text: str,
+    master_entities: dict[str, Any] | None = None
 ) -> tuple[dict[str, Any], list[str]]:
     """
     Validates the tailored resume against quality rules and runs a self-correction loop
@@ -904,6 +1078,8 @@ def validate_and_correct_resume(
         tuple of (finalized_tailored_dict, list_of_warning_strings)
     """
     warnings = []
+    if not master_entities:
+        master_entities = extract_master_entities(master_resume)
     
     # 1. Validate Professional Summary
     summary = tailored.get("summary", "")

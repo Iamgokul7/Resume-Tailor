@@ -501,6 +501,22 @@ async def generate_resume(req: GenerateRequest):
 
     contact = tailored.get("contact", {})
 
+    # Final PDF Safety Check: verify all unique factual information from master resume is represented
+    try:
+        from gemini_service import extract_master_entities, check_completeness
+        master_entities = extract_master_entities(req.master_resume)
+        completeness_errors = check_completeness(master_entities, tailored)
+        if completeness_errors:
+            logger.error("Final completeness safety check failed before PDF generation: %s", completeness_errors)
+            raise HTTPException(
+                status_code=502,
+                detail=f"Completeness safety check failed before PDF generation: {', '.join(completeness_errors)}"
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Error running completeness check before PDF generation")
+
     # Render PDF (Standard Layout first)
     try:
         pdf_path = render_pdf(tailored, contact, simple_layout=False)
