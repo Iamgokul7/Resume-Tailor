@@ -52,8 +52,9 @@ Follow these instructions strictly to ensure the tailored output is of the highe
 
 4. PROFESSIONAL SUMMARY:
    - Generate a brand-new professional summary under 4-5 lines maximum for every JD.
-   - Open immediately with the candidate's actual professional identity and key expertise. Avoid generic buzzwords (e.g. "Highly motivated", "Results-driven", "Passionate", "Dynamic individual", "Looking forward to contributing").
-   - Tone should sound written by an experienced recruiter: natural, professional, technically accurate, and easy to scan.
+   - Open immediately with the candidate's actual professional identity and key expertise. Avoid generic buzzwords or exaggerated marketing language (e.g., 'Highly motivated', 'Results-driven', 'Passionate', 'Dynamic individual', 'Proven expert', 'World-class', 'Exceptional leader', 'Highly accomplished').
+   - Prefer factual, realistic language based on the uploaded resume (e.g. 'Demonstrated experience in...', 'Experience developing...', 'Strong foundation in...', 'Hands-on experience with...', 'Familiar with...', 'Built...', 'Implemented...').
+   - Ensure sentences flow naturally, avoiding repetitive phrasing, robotic transitions, or unnecessary filler.
 
 5. TECHNICAL SKILLS:
    - Preserve every verified skill. Never invent or remove technical skills.
@@ -82,12 +83,17 @@ Follow these instructions strictly to ensure the tailored output is of the highe
 
 10. RECRUITER WRITING STYLE & SPACE MANAGEMENT:
     - Lead bullets with strong action verbs. Rotate starting verbs naturally. Use active voice exclusively.
+    - Adapt verb selection strictly to the candidate's actual experience level:
+      * For freshers, interns, entry-level, or graduates: avoid senior-level verbs that imply architectural ownership or leadership (e.g., 'Architected', 'Spearheaded', 'Championed', 'Revolutionized', 'Directed enterprise-wide'). Use appropriate verbs (e.g., 'Developed', 'Designed', 'Implemented', 'Built', 'Created', 'Engineered', 'Integrated', 'Configured', 'Optimized', 'Tested', 'Validated').
+      * For experienced professionals: use stronger verbs only when supported by the original resume. Never exaggerate responsibilities.
+    - Maintain absolute terminology and capitalization consistency across the entire resume (e.g., do not mix 'REST APIs' and 'REST API', or 'Functional Testing' and 'Manual Functional Testing' unless context requires it).
     - Focus on outcomes/purpose, but never fabricate metrics.
     - Each bullet should occupy approximately two lines maximum in the final PDF (target: 18-25 words).
     - If the resume exceeds target length, shorten bullets, remove redundant wording, merge repetitive bullet descriptions, and tighten formatting. Do not delete factual sections or entries unless explicitly requested.
 
-11. ATS OPTIMIZATION:
-    - Integrate JD keywords naturally. Avoid keyword stuffing. Use semantic equivalents and map concepts intelligently (e.g., replace generic 'Internet-related tools' with candidate-supported specific terms like 'REST APIs' or 'Web Applications').
+11. ATS OPTIMIZATION & TERMINOLOGY:
+    - Prefer standard technical terminology used by recruiters and hiring managers (e.g., 'REST APIs' instead of 'REST API', 'Functional Testing' instead of 'Manual Functional Testing', 'API Testing' instead of 'API Test Execution').
+    - Integrate JD keywords naturally only where they genuinely match the candidate's experience. Never keyword stuff or insert keywords simply to inflate ATS scores. Use semantic equivalents and map concepts intelligently.
 
 12. RESUME SCORING DASHBOARD:
     - Assess the final tailored resume against the JD to generate realistic scores and professional feedback:
