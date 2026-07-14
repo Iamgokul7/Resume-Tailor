@@ -228,6 +228,54 @@
 
       </div>
 
+      <!-- Resume Scoring Dashboard -->
+      <div class="dashboard-card hidden" id="dashboard-card" style="margin-top: 24px; margin-bottom: 24px;">
+        <h3 class="dashboard-title">✦ Resume Scoring Dashboard</h3>
+        
+        <div class="scores-grid">
+          <!-- ATS Score Box -->
+          <div class="score-box">
+            <span class="score-label">ATS Score</span>
+            <span class="score-value" id="ats-score-val">0%</span>
+            <p class="score-explanation" id="ats-explanation-text"></p>
+          </div>
+          
+          <!-- Recruiter Readability Box -->
+          <div class="score-box">
+            <span class="score-label">Readability</span>
+            <span class="score-value" id="readability-score-val">0%</span>
+            <p class="score-explanation" id="readability-explanation-text"></p>
+          </div>
+
+          <!-- JD Match Box -->
+          <div class="score-box">
+            <span class="score-label">Capability Match</span>
+            <span class="score-value" id="capability-score-val">0%</span>
+            <p class="score-explanation" id="capability-explanation-text"></p>
+          </div>
+        </div>
+
+        <div class="insights-grid">
+          <!-- Strengths Section -->
+          <div class="insight-section">
+            <h4 style="color: #2e7d32;">✓ Key Strengths</h4>
+            <ul id="strengths-list" class="insight-list strengths-list"></ul>
+          </div>
+          
+          <!-- Weaknesses Section -->
+          <div class="insight-section">
+            <h4 style="color: #c62828;">✗ Gaps & Weaknesses</h4>
+            <ul id="weaknesses-list" class="insight-list weaknesses-list"></ul>
+          </div>
+
+          <!-- Improvement Section -->
+          <div class="insight-section">
+            <h4 style="color: #d97757;">✦ Recommended Improvements</h4>
+            <ul id="improvements-list" class="insight-list improvements-list"></ul>
+          </div>
+        </div>
+      </div>
+
       <!-- Preview sections -->
       <div class="preview-content" id="preview-content">
 

@@ -1139,6 +1139,139 @@ h1, h2, h3, h4, .logo-text, .panel-title, .preview-section-title, .loading-title
   box-shadow: 0 1px 3px rgba(71, 85, 105, 0.1);
 }
 
+/* ── Resume Scoring Dashboard ───────────────────────────── */
+.dashboard-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-panel);
+}
+
+.dashboard-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 18px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+
+.scores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.score-box {
+  background: #FFFFFF;
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.score-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 42, 38, 0.04);
+}
+
+.score-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.score-value {
+  font-size: 32px;
+  font-weight: 800;
+  font-family: var(--font-headings);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.score-explanation {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  text-align: left;
+  margin: 4px 0 0 0;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.insight-section {
+  background: #FFFFFF;
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.insight-section h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-bright);
+  padding-bottom: 6px;
+}
+
+.insight-list {
+  list-style: none;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 0;
+  margin: 0;
+}
+
+.insight-list li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.insight-list li::before {
+  content: "•";
+  position: absolute;
+  left: 4px;
+  font-weight: bold;
+}
+
+.insight-list.strengths-list li::before {
+  content: "✓";
+  color: #2e7d32;
+  left: 2px;
+}
+
+.insight-list.weaknesses-list li::before {
+  content: "✗";
+  color: #c62828;
+  left: 2px;
+}
+
+.insight-list.improvements-list li::before {
+  content: "✦";
+  color: #d97757;
+  left: 2px;
+}
+
 
 
 

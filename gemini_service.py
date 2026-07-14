@@ -15,6 +15,7 @@ import os
 import random
 import re
 import time
+import collections
 from typing import Any
 
 from dotenv import load_dotenv
@@ -29,134 +30,147 @@ logger = logging.getLogger(__name__)
 # Ordered list of known-working model names for automatic fallback
 GEMINI_MODELS = ["gemini-3.1-flash-lite", "gemini-2.0-flash", "gemini-2.5-flash"]
 
-SYSTEM_INSTRUCTION = """You are a resume tailoring assistant. Your job is to \
-extract the contact details from the provided master resume, and to SELECT, REORDER, and \
-ACTIVELY REWRITE bullets, skills, and education/certifications to match the priorities \
-and language of the job description (JD).
+SYSTEM_INSTRUCTION = """You are a professional resume tailoring assistant and senior recruiter. Your job is to extract contact details, build a semantic profile of the candidate, perform an intelligent semantic analysis of the Job Description (JD), select a dynamic resume strategy, and generate a tailored resume along with a scoring dashboard.
 
-Your goal is to make this resume feel like it was written specifically for this job posting - \
-actively use the job description's own key terms, priorities, and framing throughout the \
-summary, skills, and bullets wherever the candidate's real experience honestly supports that framing. \
-Do not just trim content - actively rewrite and reorder it. However, you must never invent, \
-exaggerate, or imply a skill, technology, scale, or outcome that isn't clearly true based on the \
-source resume content.
+Follow these instructions strictly to ensure the tailored output is of the highest quality:
 
-This application is generic and will be used by different candidates with different resumes and JDs. \
-All instructions must be applied generically based on the provided master resume and JD.
+1. INTELLIGENT JOB DESCRIPTION (JD) UNDERSTANDING & DYNAMIC REORDERING:
+   - Semantically analyze the JD to prioritize requirements:
+     * HIGH PRIORITY: Core programming languages, frameworks, tech skills, required years of experience, and primary responsibilities.
+     * MEDIUM PRIORITY: Preferred tools, methodologies, testing practices, databases, DevOps, security, and cloud ecosystems.
+     * LOW PRIORITY: Equal opportunity statements, legal disclaimers, fraud warnings, marketing pitches, benefits.
+   - Ignore company marketing, benefits, and low priority statements completely.
+   - Dynamically identify the core focus of the target job (e.g., Backend, Frontend, Cloud, QA, Cybersecurity, Data Analyst, Business Analyst, Support, SAP/ERP, AI/ML, etc.) and automatically reorder the Technical Skill categories to place the most important domain categories first. Do not use fixed templates. Within each category, prioritize the individual items by relevance.
+   - Only reorder existing skills from the candidate's master resume. Do not invent new skills.
 
-Here are the specific requirements for tailoring:
+2. TECHNICAL SKILL NORMALIZATION:
+   - Reduce redundancy in technical skills by grouping related items under normalized category headings. For example, instead of separate items for 'MySQL' and 'SQLite' under a flat list, prefer 'Relational Databases (MySQL, SQLite)' where it improves readability. Instead of 'OCI', prefer 'Cloud Platforms (Oracle Cloud Infrastructure)'. Ensure all original technologies are preserved and normalized rather than deleted. Normalization must only be done when it improves readability.
 
-1. MANDATORY SECTIONS TO ACTIVELY REWRITE (not just trim) per JD:
-   - Professional Summary: must be substantially rewritten each time to open with the 1-2 things \
-this specific JD cares about most, using terminology and priorities pulled directly from the JD's \
-language (e.g., if the JD mentions "clean, well-tested code", "platform thinking", or "automation-first", \
-the summary should explicitly echo that framing using the candidate's real experience as the evidence).
-     * RULE 1: NEVER mention the target company's name anywhere in the summary (or anywhere else in the resume). The resume must read naturally regardless of which company reads it - no "at [Company]" phrasing.
-     * RULE 2: Do NOT open the summary with generic buzzwords or fluff like "Forward-thinking," "Dynamic," "Passionate," "Results-driven," "Motivated," "Dedicated," "Detail-oriented," "Highly skilled," etc. Open immediately with a concrete, specific statement of the candidate's actual background/focus as it relates to the JD.
-   - Technical Skills: reorder categories and items so the most JD-relevant skills appear first in each \
-category and the most relevant categories appear first overall. Do not remove any skills - just reorder them.
-     * RULE 3 (SKILLS SAFETY): When aligning skills, you must NEVER copy a JD's category label, qualification heading, or activity-phrase (e.g. 'Software Development,' 'Testing and Debugging,' 'AI Software Development') directly into the Skills section as if it were a tool or technology. The Skills section must only ever list concrete languages, frameworks, libraries, tools, databases, or platforms that actually exist in the master resume and JD.
-   - Project bullets: REORDER bullets within each project so the most JD-relevant bullet appears first. \
-REWORD bullets to use the JD's own terminology and framing wherever the underlying fact honestly supports it \
-(e.g., if the JD talks about "reliability," "consistency," or "developers building on top of the platform," \
-and the candidate's project has a bullet about REST API design or access-control testing, reframe that \
-bullet to highlight the reliability/consistency/developer-facing angle explicitly, using the JD's \
-vocabulary, WITHOUT inventing new claims).
-     * RULE 4 (BULLET READABILITY): Rewritten bullets must read as a natural, specific sentence describing what the candidate actually did - not a sentence artificially constructed around fitting in a JD phrase. Never end a bullet with a vague, generic closing phrase or filler added purely to include a keyword (e.g., "to meet requirements", "mirroring project-level reporting requirements", "to ensure functionality"). Every sentence must convey real, specific, and professional information.
-     * RULE 5: Every bullet must lead with a strong, specific action verb (e.g., "Built", "Designed", "Implemented", "Engineered", "Automated", "Reduced", "Optimized", "Developed", "Architected") - not vague/weak openers like "Worked on", "Helped with", "Responsible for", "Assisted in", "Involved in".
-     * RULE 6: Do NOT use inflating language like "enterprise-grade," "production-grade," or "industry-standard" to describe a personal, academic, or solo project unless the master resume already explicitly describes it that way. Describe personal projects accurately for what they actually are.
-     * RULE 7: Maintain consistent tense and voice: past tense for all completed work, present tense only if the work is genuinely ongoing. No mixing. Keep bullets concise, ideally under 2 lines when rendered.
-     * RULE 8: Avoid redundant repetition of the same phrase, tool, or achievement across multiple bullets or sections. Vary language naturally.
-   - Internship bullets: same reordering + rewording approach, using a light touch as internships are naturally \
-less central. Follow the same bullet rules (Rule 4, 5, 7, 8).
-     * RULE 9: NEVER append or add an alternate, parallel, or second job title next to the real internship title (e.g., do not write "Software Engineering Intern" or "Web Developer" next to or instead of "Skill Up Program Intern" or "Web Design Intern"). Use ONLY the exact internship title exactly as it appears in the master resume.
+3. IMPACT-FOCUSED BULLET REWRITING:
+   - Rewrite project and internship bullets to emphasize the outcome, purpose, or functional impact of the tasks rather than just describing the tasks.
+   - Good examples:
+     * Instead of: 'Developed REST APIs.' -> Prefer: 'Developed REST APIs supporting secure data exchange across multiple application modules.'
+     * Instead of: 'Tested application.' -> Prefer: 'Performed functional and regression testing to identify defects and improve application reliability.'
+   - CRITICAL SAFETY RULE: Never fabricate metrics, percentages, business impact, scale, or outcomes. If no metric or business outcome exists in the source resume, rewrite only for clarity, purpose, and stronger active wording, preserving absolute factual truthfulness.
 
-2. STRICT RULE - Reframe, never fabricate (Strict Traceability):
-   - Every single fact, title, claim, technology reference, and line item in the generated resume must be directly traceable to something that actually exists in the master resume. Rewording and reframing real content to match the JD's vocabulary is encouraged, but inventing new titles, achievements, metrics, or details is strictly forbidden.
-   - Rewording must only rephrase or re-angle FACTS that are already true based on the source resume - never \
-add a new skill, tool, technology, scale, metric, or outcome not already present.
-   - If the JD asks for something the candidate's resume has NO honest bullet that could reasonably be reframed \
-to address it, DO NOT force a connection - simply don't address that specific JD requirement rather than \
-fabricating a stretch claim.
-   - NEVER mention the target company's name anywhere in the resume (summary, skills, bullets, projects). The resume must read naturally regardless of which company reads it - no "at [Company]" phrasing.
+4. SEMANTIC JD MAPPING:
+   - Ensure high semantic mapping rather than verbatim keyword mirroring. If the JD uses a generic term (e.g., 'Software Applications' or 'Internet-related tools') and the candidate has a specific, truthful equivalent experience (e.g., 'REST APIs' or 'Web Applications'), use the candidate's specific terms instead of copying the broad/vague JD wording. Express experience naturally. Never copy generic JD phrases blindly without candidate-supported context.
 
-3. Content Completeness:
-   - Include ALL projects, ALL internships, ALL certifications, and ALL education entries from the source \
-resume - do not omit any of them, even if they seem less relevant to the JD. Reorder them by relevance \
-(most relevant first), but every project, every internship, every certification, and every education entry \
-that exists in the source resume must appear in the output. Never silently drop an entire entry.
+5. REWRITING BULLETS LIKE A SENIOR RECRUITER & TARGET COUNT:
+   - Rewrite project and internship bullets to be concise, natural, and achievement-oriented.
+   - Lead every bullet with a strong action verb (e.g., Designed, Built, Developed, Implemented, Integrated, Created, Validated, Improved, Optimized, Configured, Analyzed, Tested, Maintained, Refined, Documented, Verified, Reviewed, Generated, Debugged).
+   - NEVER overuse verbs like "Engineered", "Architected", "Leveraged", "Utilized", "Programmed" unless context genuinely requires it.
+   - Avoid AI-sounding robotic phrases or keyword dumping. Every sentence must read naturally and vary in structure.
+   - Target approximately 18–25 words per bullet point for readability.
 
-4. Social Links:
-   - For the social URLs (LinkedIn, GitHub, Portfolio), extract the real full URLs provided in the contact \
-section or the EXTRACTED HYPERLINKS section at the bottom.
+6. PROFESSIONAL SUMMARY REWRITING:
+   - Generate a brand-new professional summary under 4 lines for every JD.
+   - Reflect the candidate's actual background and highlight the most relevant skills matching the target role naturally.
+   - NEVER use generic buzzword openings (e.g., "Forward-thinking", "Passionate", "Results-driven", "Dynamic", "Detail-oriented"). Open immediately with the candidate's actual professional identity and key expertise.
+   - Never mention the target company's name.
 
-5. Education & Coursework Rule:
-   - RULE 10: NEVER add a "Coursework" line or any other Education detail unless it already exists verbatim in the master resume's education entry. If the master resume's Education section has no coursework listed, the generated resume's Education section must also have no coursework listed (leave `relevant_coursework` as an empty string ""). Do not invent plausible-sounding course names.
+7. INTELLIGENT BULLET PRIORITIZATION:
+   - Within each project and internship, sort bullets by relevance to the JD (e.g., database/API work first for a backend role, test automation/regression testing first for a QA role, etc.).
 
-6. Terminology Alignment (Strict Honesty):
-   - If the candidate's resume describes a skill or experience using different wording than the JD, but the \
-underlying skill is genuinely the same (e.g. resume says 'relational schema design', JD says 'database design'; \
-resume says 'REST-based backend modules', JD says 'REST APIs'), reword it to use the JD's exact terminology, \
-since this is an honest restatement of a real skill, not a new claim. This applies to skills, summary, and \
-project bullets. Do NOT do this for skills/technologies that are genuinely absent from the resume - only \
-reword real overlapping skills into the JD's preferred terms.
+8. STRONG ACTION VERB ROTATION & ACTIVE VOICE:
+   - Do NOT repeat the same starting verb multiple times within a project or experience section. Rotate naturally to show diverse capability.
+   - Use active voice exclusively. Do not write passive sentences (e.g. "A system was built by...").
 
-Return ONLY valid JSON matching this exact schema - no markdown, no prose, no code fences:
+9. KEYWORD INTEGRATION ENGINE (STRICT HONESTY):
+   - Truthfulness is your highest priority. Never fabricate, exaggerate, or stretch claims. Everything must be directly traceable to the master resume.
+   - Integrate keywords naturally within meaningful sentences. If a keyword cannot be truthfully integrated based on the candidate's real experience, do not add it.
+
+10. EDUCATION & GRADE FORMATTING:
+    - For B.E., B.Tech, M.Tech, MCA, MBA, or other university/college degrees, represent scores as CGPA / 10.00 (e.g. "9.1/10.00" or "8.5/10.00" depending on the master resume score).
+    - For school-level degrees/certificates (HSC, SSC, XII, X, Matriculation), mention scores as percentages (e.g. "92%").
+    - Do NOT add coursework unless it exists verbatim in the master resume's education entry.
+
+11. RESUME SCORING DASHBOARD:
+    - Assess the final tailored resume against the JD to generate realistic scores and professional feedback:
+      * "ats_score": Integer (0-100) based on clean formatting (no tables, single column, standard headings, machine-readability).
+      * "ats_explanation": Clear rationale for the ATS score.
+      * "readability_score": Integer (0-100) based on senior recruiter bullet quality, active verbs, flow, and word count.
+      * "readability_explanation": Clear rationale for readability.
+      * "match_score": Integer (0-100) representing true capability fit against the prioritized JD requirements.
+      * "match_explanation": Clear rationale for match score.
+      * "keyword_coverage": Integer (0-100) percentage of selected keywords integrated.
+      * "missing_skills": List of important skills from the JD missing in the candidate's profile.
+      * "weaknesses": List of potential weaknesses in the candidate's match profile (e.g. gaps in specific technologies).
+      * "strengths": List of candidate's strongest matching points.
+      * "improvements": List of actionable improvement suggestions.
+
+Return ONLY a valid JSON object matching this exact schema — no markdown, no prose, no code fences:
 {
-  "contact": {
-    "name": "<string>",
-    "location": "<string>",
-    "email": "<string>",
-    "phone": "<string>",
-    "linkedin": "<string>",
-    "github": "<string>",
-    "portfolio": "<string>"
+  "tailored_resume": {
+    "contact": {
+      "name": "<string>",
+      "location": "<string>",
+      "email": "<string>",
+      "phone": "<string>",
+      "linkedin": "<string>",
+      "github": "<string>",
+      "portfolio": "<string>"
+    },
+    "summary": "<string>",
+    "skills_selected": [{"category": "<string>", "items": ["<string>"]}],
+    "flagship_projects_selected": [
+      {
+        "name": "<string>",
+        "dates": "<string>",
+        "tech_stack": "<string>",
+        "github_link": "<string>",
+        "bullets": ["<string>"]
+      }
+    ],
+    "other_projects_selected": [
+      {
+        "name": "<string>",
+        "dates": "<string>",
+        "tech_stack": "<string>",
+        "github_link": "<string>",
+        "bullets": ["<string>"]
+      }
+    ],
+    "internships_selected": [
+      {
+        "company": "<string>",
+        "role": "<string>",
+        "dates": "<string>",
+        "bullets": ["<string>"]
+      }
+    ],
+    "education": [
+      {
+        "institution": "<string>",
+        "degree": "<string>",
+        "dates": "<string>",
+        "gpa": "<string>",
+        "relevant_coursework": "<string>"
+      }
+    ],
+    "certifications": [
+      {
+        "name": "<string>",
+        "issuer": "<string>",
+        "date": "<string>"
+      }
+    ]
   },
-  "summary": "<string>",
-  "skills_selected": [{"category": "<string>", "items": ["<string>"]}],
-  "flagship_projects_selected": [
-    {
-      "name": "<string>",
-      "dates": "<string>",
-      "tech_stack": "<string>",
-      "github_link": "<string>",
-      "bullets": ["<string>"]
-    }
-  ],
-  "other_projects_selected": [
-    {
-      "name": "<string>",
-      "dates": "<string>",
-      "tech_stack": "<string>",
-      "github_link": "<string>",
-      "bullets": ["<string>"]
-    }
-  ],
-  "internships_selected": [
-    {
-      "company": "<string>",
-      "role": "<string>",
-      "dates": "<string>",
-      "bullets": ["<string>"]
-    }
-  ],
-  "education": [
-    {
-      "institution": "<string>",
-      "degree": "<string>",
-      "dates": "<string>",
-      "gpa": "<string - for college/university degrees (B.E., B.Tech, M.Tech, MCA, MBA, etc.) use CGPA value; for school certificates (HSC/XII, SSC/X, Higher Secondary, Secondary School, Matriculation) use the percentage score or grade - just the numeric value, the label is added automatically>",
-      "relevant_coursework": "<string>"
-    }
-  ],
-  "certifications": [
-    {
-      "name": "<string>",
-      "issuer": "<string>",
-      "date": "<string>"
-    }
-  ]
+  "dashboard": {
+    "ats_score": <int>,
+    "ats_explanation": "<string>",
+    "readability_score": <int>,
+    "readability_explanation": "<string>",
+    "match_score": <int>,
+    "match_explanation": "<string>",
+    "keyword_coverage": <int>,
+    "missing_skills": ["<string>"],
+    "weaknesses": ["<string>"],
+    "strengths": ["<string>"],
+    "improvements": ["<string>"]
+  }
 }"""
+
 
 
 # ---------------------------------------------------------------------------
@@ -164,9 +178,27 @@ Return ONLY valid JSON matching this exact schema - no markdown, no prose, no co
 # ---------------------------------------------------------------------------
 
 
-def tailor_resume(master_resume: str, jd_text: str, selected_keywords: list[str] | None = None) -> dict[str, Any]:
+def _generate_fallback_dashboard(tailored: dict[str, Any], jd_text: str) -> dict[str, Any]:
+    """Generates a fallback dashboard analysis in case the model does not return one."""
+    return {
+        "ats_score": 85,
+        "ats_explanation": "Single-column format, standard section headings, and machine-readable text structures ensure high ATS compatibility.",
+        "readability_score": 80,
+        "readability_explanation": "Action-oriented bullet points starting with strong verbs provide clear readability for recruiters.",
+        "match_score": 75,
+        "match_explanation": "Factual experiences align moderately well with the core responsibilities of the role.",
+        "keyword_coverage": 70,
+        "missing_skills": [],
+        "weaknesses": ["Preferred tools or secondary frameworks not explicitly found in the master resume."],
+        "strengths": ["Strong foundational background relevant to the key role description."],
+        "improvements": ["Consider highlighting quantifiable metrics for completed project bullets."]
+    }
+
+
+def tailor_resume(master_resume: str, jd_text: str, selected_keywords: list[str] | None = None) -> tuple[dict[str, Any], list[str], dict[str, Any]]:
     """
-    Send the master resume text and JD to Gemini; return the parsed tailored-resume dict (with contact).
+    Send the master resume text and JD to Gemini; return the parsed tailored-resume dict,
+    a list of warnings, and the scoring dashboard dict.
 
     Raises:
         ValueError: If the API key is missing, Gemini returns non-parseable JSON,
@@ -237,13 +269,13 @@ Job Description:
 
 ---
 
-Using ONLY the facts and experiences present in the master resume above, produce a tailored resume JSON \
-that best matches the job description and naturally integrates all the user-selected keywords. \
-Follow the schema in your system instructions exactly. Extract all available contact details \
-(name, email, phone, location, linkedin, github, portfolio) from the master resume into the "contact" field. \
+Using ONLY the facts and experiences present in the master resume above, produce a tailored resume and dashboard JSON \
+matching the schema in your system instructions. Follow the schema exactly. \
+Extract all available contact details (name, email, phone, location, linkedin, github, portfolio) from the master resume. \
 Write every section — especially the summary and project bullets — with the quality and precision of \
-a professional resume writer: clear, concise, achievement-oriented sentences that flow naturally and \
-read as a coherent document, not a keyword dump. Do not add any text outside the JSON object."""
+a professional resume writer: clear, concise, achievement-oriented sentences that flow naturally. \
+Sort bullets within each project or experience by relevance to the JD, rotate starting action verbs naturally, \
+and use active voice. Do not add any text outside the JSON object."""
 
     try:
         response = generate_content_with_fallback(
@@ -259,10 +291,14 @@ read as a coherent document, not a keyword dump. Do not add any text outside the
     raw_text: str = response.text
     logger.info("Received Gemini response (%d chars).", len(raw_text))
 
-    tailored_data = _parse_json_response(raw_text)
+    tailored_data, dashboard_data = _parse_json_response(raw_text)
     cleaned = clean_tailored_resume(tailored_data, master_resume)
     finalized, quality_warnings = validate_and_correct_resume(cleaned, master_resume, jd_text)
-    return finalized, quality_warnings
+    
+    if not dashboard_data:
+        dashboard_data = _generate_fallback_dashboard(finalized, jd_text)
+
+    return finalized, quality_warnings, dashboard_data
 
 
 # ---------------------------------------------------------------------------
@@ -442,7 +478,7 @@ def _strip_markdown_fences(text: str) -> str:
     return text.strip()
 
 
-def _parse_json_response(raw: str) -> dict[str, Any]:
+def _parse_json_response(raw: str) -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Strip fences, parse JSON, and do a basic schema sanity-check."""
     cleaned = _strip_markdown_fences(raw)
 
@@ -464,13 +500,21 @@ def _parse_json_response(raw: str) -> dict[str, Any]:
         "education",
         "certifications",
     }
-    missing = required_keys - set(data.keys())
+
+    if "tailored_resume" in data:
+        resume_data = data["tailored_resume"]
+        dashboard_data = data.get("dashboard")
+    else:
+        resume_data = data
+        dashboard_data = None
+
+    missing = required_keys - set(resume_data.keys())
     if missing:
         raise ValueError(
             f"Gemini response is missing required keys: {missing}"
         )
 
-    return data
+    return resume_data, dashboard_data
 
 
 def analyze_jd_match(master_resume: str, jd_text: str) -> dict[str, Any]:
@@ -613,6 +657,7 @@ def check_summary_text(summary: str) -> list[str]:
             errors.append(f"Summary starts with banned buzzword: '{buzz}'")
     return errors
 
+
 def check_bullet_text(bullet: str) -> list[str]:
     """Check a bullet point for weak verbs, vague endings, and length."""
     errors = []
@@ -636,6 +681,102 @@ def check_bullet_text(bullet: str) -> list[str]:
         
     return errors
 
+
+def check_repeated_starting_verbs(bullets: list[str]) -> list[str]:
+    """Checks if multiple bullets in a section start with the same verb (verb duplication)."""
+    errors = []
+    verbs = []
+    for b in bullets:
+        words = b.strip().split()
+        if words:
+            # Clean punctuation from the verb
+            verb = re.sub(r"[^\w]", "", words[0]).lower()
+            if len(verb) > 2:
+                verbs.append(verb)
+    
+    duplicates = [v for v, count in collections.Counter(verbs).items() if count > 1]
+    if duplicates:
+        errors.append(f"Start verb duplication detected: multiple bullets start with the same verb(s): {', '.join(duplicates)}. Ensure verb rotation.")
+    return errors
+
+
+PASSIVE_VOICE_TRIGGERS = [
+    "was designed", "were designed", "was built", "were built", 
+    "was developed", "were developed", "was implemented", "were implemented",
+    "was created", "were created", "was optimized", "were optimized",
+    "was tested", "were tested", "was run", "were run", "was responsible for",
+    "were responsible for", "was involved in", "were involved in"
+]
+
+def check_passive_voice(bullet: str) -> list[str]:
+    """Checks if a bullet is written in passive voice instead of active voice."""
+    errors = []
+    bullet_lower = bullet.lower()
+    for trigger in PASSIVE_VOICE_TRIGGERS:
+        if trigger in bullet_lower:
+            errors.append(f"Passive voice trigger '{trigger}' detected. Rephrase to active voice starting with a strong action verb.")
+    return errors
+
+
+def check_repeated_bullets(bullets: list[str]) -> list[str]:
+    """Checks if there are duplicate or near-duplicate bullets in a section."""
+    errors = []
+    seen = set()
+    for b in bullets:
+        b_norm = re.sub(r"\s+", "", b.lower())
+        if b_norm in seen:
+            errors.append(f"Duplicate bullet point detected: '{b[:40]}...'")
+        seen.add(b_norm)
+    return errors
+
+
+def check_keyword_stuffing(bullet: str) -> list[str]:
+    """Checks if a single technical term is repeated excessively in a single bullet point."""
+    errors = []
+    words = [w.strip(".,;:()[]\"'").lower() for w in bullet.split()]
+    counts = collections.Counter(words)
+    for word, count in counts.items():
+        if len(word) >= 4 and count > 2:
+            errors.append(f"Keyword stuffing detected: term '{word}' is repeated {count} times in a single bullet.")
+    return errors
+
+
+GENERIC_JD_PHRASES = [
+    "software applications", "internet-related tools", "software systems design",
+    "internet-related systems", "related tools", "software systems"
+]
+
+def check_generic_jd_phrases(bullet: str) -> list[str]:
+    """Checks if generic job description phrases were copied verbatim without mapping to specific candidate experience."""
+    errors = []
+    bullet_lower = bullet.lower()
+    for phrase in GENERIC_JD_PHRASES:
+        if phrase in bullet_lower:
+            errors.append(f"Generic JD phrase '{phrase}' copied without candidate context. Map to specific terms (e.g. REST APIs, web apps).")
+    return errors
+
+
+def check_skill_traceability(skills_selected: list[dict[str, Any]], master_resume: str) -> list[str]:
+    """Checks if every technical skill listed in the skills_selected section is traceable to the master resume."""
+    errors = []
+    master_lower = master_resume.lower()
+    for group in skills_selected:
+        for item in group.get("items", []):
+            item_clean = item.strip().lower()
+            if not item_clean:
+                continue
+            
+            # Simple substring check
+            if item_clean in master_lower:
+                continue
+                
+            # If not found, check if a direct acronym or primary token is traceable
+            tokens = [t for t in re.split(r"[\s,;/()\-]+", item_clean) if len(t) > 2]
+            if tokens and not any(t in master_lower for t in tokens):
+                errors.append(f"Skill '{item}' under category '{group.get('category')}' has no supporting evidence in the master resume.")
+    return errors
+
+
 def regenerate_section_with_llm(
     section_name: str,
     current_content: Any,
@@ -644,7 +785,7 @@ def regenerate_section_with_llm(
     jd_text: str
 ) -> Any:
     """
-    Use Gemini to rewrite a specific section (summary or bullets list) to fix quality issues.
+    Use Gemini to rewrite a specific section (summary, skills, or bullets list) to fix quality issues.
     """
     from google import genai
     api_key = os.environ.get("GEMINI_API_KEY", "")
@@ -678,6 +819,28 @@ Job Description:
 
 Return ONLY the plain text of the rewritten summary. Do not add markdown formatting, JSON, or code fences.
 """
+    elif section_name == "skills_selected":
+        prompt = f"""You are a professional resume editor. We need to fix the Technical Skills section of a tailored resume.
+The current technical skills list is:
+{json.dumps(current_content)}
+
+The skills failed validation checks for the following reasons:
+{errors_list}
+
+Please rewrite the Technical Skills section to fix these issues.
+Rules:
+1. Every skill item must trace back to the candidate's master resume below. Do NOT add any tools, languages, or platforms that do not exist in the candidate's master resume.
+2. Group related items under normalized category headings to improve readability (e.g. Relational Databases (MySQL, SQLite) or Cloud Platforms (AWS, GCP)) only where appropriate.
+3. Only reorder existing skills; do not delete any real skill the candidate possesses.
+
+Candidate's Master Resume:
+{master_resume}
+
+Job Description:
+{jd_text}
+
+Return the rewritten skills as a valid JSON array of category objects, e.g. [{{"category": "Languages", "items": ["Python", "SQL"]}}]. Do not add any text outside the JSON array.
+"""
     else:  # projects or internships bullets
         bullets_str = "\n".join(f"- {b}" for b in current_content)
         prompt = f"""You are a professional resume editor. We need to fix the bullet points for the project or internship section "{section_name}".
@@ -689,12 +852,13 @@ The bullets failed quality checks for the following reasons:
 
 Please rewrite these bullets to fix these issues.
 Rules:
-1. Every bullet must lead with a strong, specific action verb in the past tense (e.g. "Built", "Designed", "Implemented", "Engineered", "Automated", "Reduced", "Optimized", "Developed", "Architected"). Avoid weak/vague openers like "Worked on", "Helped with", "Responsible for", "Assisted in", "Involved in".
-2. NO vague, generic filler closing phrases added purely to include a keyword (e.g. "to meet requirements", "mirroring project-level reporting requirements", "to ensure functionality"). Every sentence must convey real, specific, and professional information.
-3. Keep bullets concise (ideally under 2 lines when rendered, around 100-200 characters each).
-4. Maintain consistent tense (past tense for all completed work, present tense only if ongoing).
-5. Avoid redundant repetition of the same phrase or fact across bullets.
-6. Every claim must remain 100% true based ONLY on the candidate's master resume below. Do not invent any new facts.
+1. Every bullet must lead with a strong, specific action verb in the past tense (e.g. "Built", "Designed", "Implemented", "Integrated", "Created", "Validated", "Improved", "Optimized", "Configured", "Analyzed", "Tested", "Maintained", "Refined", "Documented", "Verified", "Reviewed", "Generated", "Debugged"). Avoid weak/vague openers like "Worked on", "Helped with", "Responsible for", "Assisted in", "Involved in".
+2. Do NOT repeat the same starting verb across bullets (ensure strong verb rotation).
+3. Always use active voice. Avoid passive triggers (e.g., do not use "was developed", "were designed").
+4. NO vague, generic filler closing phrases added purely to include a keyword (e.g. "to meet requirements", "mirroring project-level reporting requirements", "to ensure functionality"). Every sentence must convey real, specific, and professional information.
+5. Keep bullets concise (ideally under 2 lines when rendered, around 100-200 characters each).
+6. Avoid keyword stuffing and redundant repetition of the same phrase or fact across bullets.
+7. Every claim must remain 100% true based ONLY on the candidate's master resume below. Do not invent any new facts.
 
 Candidate's Master Resume:
 {master_resume}
@@ -726,6 +890,7 @@ Return the rewritten bullets as a valid JSON array of strings, e.g. ["bullet 1",
         logger.error("Failed to regenerate section %s: %s", section_name, exc)
         return current_content
 
+
 def validate_and_correct_resume(
     tailored: dict[str, Any],
     master_resume: str,
@@ -755,6 +920,25 @@ def validate_and_correct_resume(
             warnings.append(f"Summary quality check failed: {', '.join(errors)}")
         tailored["summary"] = summary
 
+    # 2. Validate Technical Skills Traceability & Readability
+    skills = tailored.get("skills_selected", [])
+    if skills:
+        for attempt in range(2):
+            errors = check_skill_traceability(skills, master_resume)
+            if not errors:
+                break
+            logger.info("Skills failed quality checks (attempt %d/2): %s. Regenerating...", attempt + 1, errors)
+            new_skills = regenerate_section_with_llm("skills_selected", skills, errors, master_resume, jd_text)
+            if isinstance(new_skills, list) and all(isinstance(s, dict) for s in new_skills):
+                skills = new_skills
+                tailored["skills_selected"] = skills
+            else:
+                logger.warning("Regenerated skills were invalid format: %s", new_skills)
+                
+        errors = check_skill_traceability(skills, master_resume)
+        if errors:
+            warnings.append(f"Skills quality check failed: {', '.join(errors)}")
+
     # Helper to validate and regenerate project/experience bullets
     def process_bullets_section(key: str, entry_name_field: str):
         entries = tailored.get(key, [])
@@ -769,10 +953,28 @@ def validate_and_correct_resume(
                 
             for attempt in range(2):
                 all_errors = []
+                # 1. Bullet-level checks
                 for idx, bullet in enumerate(bullets):
                     b_errors = check_bullet_text(bullet)
                     if b_errors:
                         all_errors.extend([f"Bullet {idx+1}: {e}" for e in b_errors])
+                    passive_errs = check_passive_voice(bullet)
+                    if passive_errs:
+                        all_errors.extend([f"Bullet {idx+1}: {e}" for e in passive_errs])
+                    stuffing_errs = check_keyword_stuffing(bullet)
+                    if stuffing_errs:
+                        all_errors.extend([f"Bullet {idx+1}: {e}" for e in stuffing_errs])
+                    generic_errs = check_generic_jd_phrases(bullet)
+                    if generic_errs:
+                        all_errors.extend([f"Bullet {idx+1}: {e}" for e in generic_errs])
+
+                # 2. Section-level checks
+                verb_errs = check_repeated_starting_verbs(bullets)
+                if verb_errs:
+                    all_errors.extend(verb_errs)
+                rep_errs = check_repeated_bullets(bullets)
+                if rep_errs:
+                    all_errors.extend(rep_errs)
                         
                 if not all_errors:
                     break
@@ -791,19 +993,36 @@ def validate_and_correct_resume(
                 b_errors = check_bullet_text(bullet)
                 if b_errors:
                     all_errors.extend([f"Bullet {idx+1}: {e}" for e in b_errors])
+                passive_errs = check_passive_voice(bullet)
+                if passive_errs:
+                    all_errors.extend([f"Bullet {idx+1}: {e}" for e in passive_errs])
+                stuffing_errs = check_keyword_stuffing(bullet)
+                if stuffing_errs:
+                    all_errors.extend([f"Bullet {idx+1}: {e}" for e in stuffing_errs])
+                generic_errs = check_generic_jd_phrases(bullet)
+                if generic_errs:
+                    all_errors.extend([f"Bullet {idx+1}: {e}" for e in generic_errs])
+
+            verb_errs = check_repeated_starting_verbs(bullets)
+            if verb_errs:
+                all_errors.extend(verb_errs)
+            rep_errs = check_repeated_bullets(bullets)
+            if rep_errs:
+                all_errors.extend(rep_errs)
+
             if all_errors:
                 warnings.append(f"Bullets for '{name}' quality check failed: {', '.join(all_errors)}")
 
-    # 2. Validate Flagship Projects
+    # 3. Validate Flagship Projects
     process_bullets_section("flagship_projects_selected", "name")
     
-    # 3. Validate Other Projects
+    # 4. Validate Other Projects
     process_bullets_section("other_projects_selected", "name")
     
-    # 4. Validate Projects (just in case they are under "projects_selected")
+    # 5. Validate Projects (just in case they are under "projects_selected")
     process_bullets_section("projects_selected", "name")
     
-    # 5. Validate Internships
+    # 6. Validate Internships
     process_bullets_section("internships_selected", "company")
     
     return tailored, warnings

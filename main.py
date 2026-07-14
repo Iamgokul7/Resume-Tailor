@@ -156,6 +156,7 @@ class GenerateResponse(BaseModel):
     pdf_filename: str
     overall_match_percentage: int
     warnings: list[str] = []
+    dashboard: dict[str, Any] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -488,7 +489,7 @@ async def generate_resume(req: GenerateRequest):
         )
 
     try:
-        tailored, warnings = tailor_resume(req.master_resume, req.jd_text, req.selected_keywords)
+        tailored, warnings, dashboard = tailor_resume(req.master_resume, req.jd_text, req.selected_keywords)
     except ValueError as exc:
         raise HTTPException(status_code=502, detail=str(exc))
     except Exception as exc:
@@ -530,7 +531,8 @@ async def generate_resume(req: GenerateRequest):
         tailored=tailored,
         pdf_filename=pdf_path.name,
         overall_match_percentage=overall_match,
-        warnings=warnings
+        warnings=warnings,
+        dashboard=dashboard
     )
 
 

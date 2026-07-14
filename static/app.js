@@ -368,7 +368,7 @@ async function generateTailoredResume() {
 
 // ── Render the result preview ─────────────────────────────────
 function renderResult(data) {
-  const { tailored, overall_match_percentage, warnings } = data;
+  const { tailored, overall_match_percentage, warnings, dashboard } = data;
 
   // ── Render Warnings ──
   const warnContainer = $("warnings-container");
@@ -385,6 +385,43 @@ function renderResult(data) {
     } else {
       warnContainer.classList.add("hidden");
     }
+  }
+
+  // ── Render Scoring Dashboard ──
+  const dashboardCard = $("dashboard-card");
+  if (dashboardCard && dashboard) {
+    $("ats-score-val").textContent = `${dashboard.ats_score || 0}%`;
+    $("ats-explanation-text").textContent = dashboard.ats_explanation || "";
+
+    $("readability-score-val").textContent = `${dashboard.readability_score || 0}%`;
+    $("readability-explanation-text").textContent = dashboard.readability_explanation || "";
+
+    $("capability-score-val").textContent = `${dashboard.match_score || 0}%`;
+    $("capability-explanation-text").textContent = dashboard.match_explanation || "";
+
+    const renderList = (elementId, items) => {
+      const listEl = $(elementId);
+      if (listEl) {
+        listEl.innerHTML = "";
+        if (items && items.length > 0) {
+          items.forEach(item => {
+            const li = document.createElement("li");
+            li.textContent = item;
+            listEl.appendChild(li);
+          });
+        } else {
+          listEl.innerHTML = "<li class='text-muted'>None identified.</li>";
+        }
+      }
+    };
+
+    renderList("strengths-list", dashboard.strengths);
+    renderList("weaknesses-list", dashboard.weaknesses);
+    renderList("improvements-list", dashboard.improvements);
+
+    dashboardCard.classList.remove("hidden");
+  } else if (dashboardCard) {
+    dashboardCard.classList.add("hidden");
   }
 
   // ── Match Analysis Card ──
