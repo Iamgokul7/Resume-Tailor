@@ -83,16 +83,17 @@ Follow these instructions strictly to ensure the tailored output is of the highe
 
 10. RECRUITER WRITING STYLE & SPACE MANAGEMENT:
     - Lead bullets with strong action verbs. Rotate starting verbs naturally. Use active voice exclusively.
-    - Adapt verb selection strictly to the candidate's actual experience level:
-      * For freshers, interns, entry-level, or graduates: avoid senior-level verbs that imply architectural ownership or leadership (e.g., 'Architected', 'Spearheaded', 'Championed', 'Revolutionized', 'Directed enterprise-wide'). Use appropriate verbs (e.g., 'Developed', 'Designed', 'Implemented', 'Built', 'Created', 'Engineered', 'Integrated', 'Configured', 'Optimized', 'Tested', 'Validated').
+    - Adapt verb selection and technical scope strictly to the candidate's actual experience level (dynamically inferred from the master resume):
+      * For students, freshers, interns, graduates, or entry-level engineers: avoid verbs that imply executive ownership, enterprise-wide architecture, or senior technical leadership (e.g., 'Architected', 'Spearheaded', 'Championed', 'Revolutionized', 'Directed', 'Led enterprise-wide', 'Defined organization-wide strategy') unless explicitly supported by the uploaded resume. Use realistic professional verbs (e.g., 'Developed', 'Designed', 'Implemented', 'Built', 'Created', 'Engineered', 'Integrated', 'Configured', 'Optimized', 'Tested', 'Validated', 'Enhanced', 'Automated', 'Maintained', 'Improved').
       * For experienced professionals: use stronger verbs only when supported by the original resume. Never exaggerate responsibilities.
-    - Maintain absolute terminology and capitalization consistency across the entire resume (e.g., do not mix 'REST APIs' and 'REST API', or 'Functional Testing' and 'Manual Functional Testing' unless context requires it).
+    - Ensure appropriate technical scope: the wording should accurately represent the scope of the candidate's work and avoid language that unintentionally inflates responsibility (prefer wording reflecting implementation, development, testing, deployment, or collaboration unless the uploaded resume clearly demonstrates ownership of architecture, organizational strategy, or technical leadership).
+    - Maintain absolute terminology, plurality, capitalization, and naming convention consistency across the entire resume (e.g., do not mix 'REST APIs' and 'REST API', or 'Functional Testing' and 'Manual Functional Testing' unless context requires it).
     - Focus on outcomes/purpose, but never fabricate metrics.
     - Each bullet should occupy approximately two lines maximum in the final PDF (target: 18-25 words).
     - If the resume exceeds target length, shorten bullets, remove redundant wording, merge repetitive bullet descriptions, and tighten formatting. Do not delete factual sections or entries unless explicitly requested.
 
 11. ATS OPTIMIZATION & TERMINOLOGY:
-    - Prefer standard technical terminology used by recruiters and hiring managers (e.g., 'REST APIs' instead of 'REST API', 'Functional Testing' instead of 'Manual Functional Testing', 'API Testing' instead of 'API Test Execution').
+    - Prefer standard technical terminology commonly used by recruiters, hiring managers, and engineering teams (e.g., 'REST APIs' instead of 'REST API', 'Web Applications' instead of 'Web Application', 'Backend Services' instead of 'Backend Service', 'Cloud Platforms' instead of 'Cloud Platform' when multiple technologies are involved). Choose terminology naturally according to context.
     - Integrate JD keywords naturally only where they genuinely match the candidate's experience. Never keyword stuff or insert keywords simply to inflate ATS scores. Use semantic equivalents and map concepts intelligently.
 
 12. RESUME SCORING DASHBOARD:
